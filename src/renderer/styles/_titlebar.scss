@@ -3,14 +3,14 @@
 
 .top-titlebar {
   height: 48px;
-  background: $bg-surface;
-  border-bottom: 1px solid $border-color;
+  background: $bg-black;
+  border-bottom: 1px solid $border-subtle;
   display: flex;
   align-items: center;
   padding-left: 84px; // macOS traffic light spacing
-  padding-right: 18px;
+  padding-right: 20px;
   -webkit-app-region: drag;
-  gap: 16px;
+  gap: 20px;
   flex-shrink: 0;
 }
 
@@ -18,17 +18,33 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  background: linear-gradient(135deg, $accent-cyan, $accent-blue);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  font-family: $font-mono;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: $text-pure;
 }
 
-.brand-icon {
-  font-size: 18px;
-  -webkit-text-fill-color: initial;
+.brand-mark {
+  font-size: 14px;
+  font-weight: 700;
+  color: $text-pure;
+}
+
+.brand-name {
+  color: $text-pure;
+  font-weight: 700;
+}
+
+.brand-badge {
+  font-size: 9px;
+  font-family: $font-mono;
+  color: $text-muted;
+  letter-spacing: 0.08em;
+  padding: 1px 5px;
+  border: 1px solid $border-subtle;
+  border-radius: $radius-xs;
+  margin-left: 4px;
 }
 
 .titlebar-actions {
@@ -39,27 +55,39 @@
   gap: 12px;
 }
 
+.btn-demo {
+  @include xai-button;
+  padding: 5px 11px;
+  font-family: $font-mono;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
 .keyboard-hints {
-  font-size: 11px;
+  font-family: $font-mono;
+  font-size: 10px;
   color: $text-dim;
   display: flex;
-  gap: 12px;
+  gap: 14px;
+  letter-spacing: 0.04em;
 
   .kbd {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.07);
     padding: 2px 5px;
-    border-radius: 3px;
-    color: $text-muted;
+    border-radius: $radius-xs;
+    color: $text-secondary;
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
 }
 
 .breadcrumbs {
-  padding: 8px 18px;
-  background: rgba(255, 255, 255, 0.02);
-  border-bottom: 1px solid $border-color;
-  font-size: 12px;
-  color: $text-dim;
+  padding: 8px 20px;
+  background: $bg-black;
+  border-bottom: 1px solid $border-subtle;
+  font-family: $font-mono;
+  font-size: 11px;
+  color: $text-muted;
   @include text-truncate;
   flex-shrink: 0;
+  letter-spacing: 0.02em;
 }
-

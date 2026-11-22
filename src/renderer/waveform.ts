@@ -313,9 +313,9 @@ export class WaveformEngine {
       const isPast = progressRatio <= progress;
 
       ctx.beginPath();
-      ctx.roundRect(x, topY, barWidth, barHeight, 1.2 * dpr);
+      ctx.roundRect(x, topY, barWidth, barHeight, 1.0 * dpr);
       ctx.fillStyle = isPast
-        ? (isPlaying ? '#00f2fe' : '#38bdf8')
+        ? '#ffffff'
         : 'rgba(255, 255, 255, 0.22)';
       ctx.fill();
     }

@@ -6,12 +6,14 @@
   margin: 0;
   padding: 0;
   user-select: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  font-family: $font-main;
-  background-color: $bg-dark;
-  color: $text-main;
+  font-family: $font-sans;
+  background-color: $bg-black;
+  color: $text-primary;
   overflow: hidden;
   height: 100vh;
   display: flex;
@@ -23,6 +25,7 @@ body {
   flex-direction: column;
   height: 100vh;
   width: 100vw;
+  background-color: $bg-black;
 }
 
 .main-layout {
@@ -36,7 +39,6 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background-color: $bg-dark;
+  background-color: $bg-black;
   overflow: hidden;
 }
-

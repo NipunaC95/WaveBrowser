@@ -6,8 +6,8 @@
   justify-content: center;
 }
 
-@mixin glassmorphism($blur: 16px) {
-  background: rgba($bg-surface, 0.95);
+@mixin glassmorphism($blur: 20px) {
+  background: rgba($bg-surface, 0.92);
   backdrop-filter: blur($blur);
   -webkit-backdrop-filter: blur($blur);
 }
@@ -18,20 +18,61 @@
   text-overflow: ellipsis;
 }
 
+@mixin xai-button {
+  background: transparent;
+  border: 1px solid $border-medium;
+  color: $text-primary;
+  border-radius: $radius-sm;
+  font-family: $font-sans;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.15s ease-out;
+
+  &:hover {
+    border-color: $border-strong;
+    color: $text-pure;
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+@mixin xai-button-primary {
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #ffffff;
+  border-radius: $radius-sm;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease-out;
+
+  &:hover {
+    background: #e4e4e7;
+    border-color: #e4e4e7;
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
 @mixin custom-scrollbar {
   &::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
   }
   &::-webkit-scrollbar-track {
     background: transparent;
   }
   &::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.12);
-    border-radius: 3px;
+    border-radius: 2px;
     &:hover {
       background: rgba(255, 255, 255, 0.25);
     }
   }
 }
-

@@ -50,7 +50,7 @@ export class FolderTreeUI {
     // Expand arrow
     const arrow = document.createElement('span');
     arrow.className = `tree-arrow ${hasChildren ? (isExpanded ? 'expanded' : 'collapsed') : 'leaf'}`;
-    arrow.innerHTML = hasChildren ? '▸' : '';
+    arrow.innerHTML = hasChildren ? (isExpanded ? '⌄' : '›') : ' ';
     arrow.addEventListener('click', (e) => {
       e.stopPropagation();
       if (!hasChildren) return;
@@ -66,7 +66,7 @@ export class FolderTreeUI {
     // Folder icon
     const icon = document.createElement('span');
     icon.className = 'tree-icon';
-    icon.innerHTML = isExpanded ? '📂' : '📁';
+    icon.innerHTML = '/';
     row.appendChild(icon);
 
     // Folder name
