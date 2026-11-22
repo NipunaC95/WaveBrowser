@@ -16,7 +16,7 @@ export class FilterBarComponent {
     searchQuery: '',
     formatFilter: 'ALL',
     autoPlay: true,
-    recursive: false
+    recursive: true
   };
 
   private onChangeCallback: (state: FilterState) => void;

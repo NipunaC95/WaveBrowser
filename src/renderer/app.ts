@@ -82,39 +82,53 @@ export class WaveBrowseApp {
         }
 
   private async loadInitialFolder(): Promise<void> {
-          const demoPath = await window.api.getDemoPath();
-          if (demoPath) {
-            await this.openFolder(demoPath);
-          }
+    const lastDir = localStorage.getItem('wavebrowse_last_directory');
+    if (lastDir) {
+      try {
+        const tree = await window.api.getFolderTree(lastDir);
+        if (tree) {
+          await this.openFolder(lastDir);
+          return;
         }
+      } catch {
+        // Fallback to demo
+      }
+    }
+    const demoPath = await window.api.getDemoPath();
+    if (demoPath) {
+      await this.openFolder(demoPath);
+    }
+  }
 
   async openFolder(folderPath: string): Promise<void> {
-          this.currentRootFolder = folderPath;
-          this.currentSelectedFolder = folderPath;
-          this.header.setBreadcrumbs(folderPath);
+    this.currentRootFolder = folderPath;
+    this.currentSelectedFolder = folderPath;
+    this.header.setBreadcrumbs(folderPath);
+    localStorage.setItem('wavebrowse_last_directory', folderPath);
 
-          const tree = await window.api.getFolderTree(folderPath);
-          this.sidebar.setTree(tree, folderPath);
+    const tree = await window.api.getFolderTree(folderPath);
+    this.sidebar.setTree(tree, folderPath);
 
-          await this.scanTracks(folderPath);
-        }
+    await this.scanTracks(folderPath);
+  }
 
   private async selectFolder(folderPath: string): Promise<void> {
-          this.currentSelectedFolder = folderPath;
-          this.header.setBreadcrumbs(folderPath);
-          await this.scanTracks(folderPath);
-        }
+    this.currentSelectedFolder = folderPath;
+    this.header.setBreadcrumbs(folderPath);
+    localStorage.setItem('wavebrowse_last_directory', folderPath);
+    await this.scanTracks(folderPath);
+  }
 
   private async scanTracks(folderPath: string): Promise<void> {
-          const filterState = this.filterBar.getState();
-          const tracks = await window.api.scanAudioFiles({
-            dirPath: folderPath,
-      recursive: filterState.recursive
-          });
+    const filterState = this.filterBar.getState();
+    const tracks = await window.api.scanAudioFiles({
+      dirPath: folderPath,
+      recursive: filterState.recursive !== false
+    });
 
-          this.allTracks = tracks;
-          this.applyFilters();
-        }
+    this.allTracks = tracks;
+    this.applyFilters();
+  }
 
   private applyFilters(): void {
           const { searchQuery, formatFilter, autoPlay } = this.filterBar.getState();

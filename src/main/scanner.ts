@@ -58,7 +58,7 @@ export function getDirectoryTree(dirPath: string, maxDepth = 4, currentDepth = 0
   }
 }
 
-export function scanAudioFiles(dirPath: string, recursive = false, maxFiles = 3000): AudioFileItem[] {
+export function scanAudioFiles(dirPath: string, recursive = true, maxFiles = 10000): AudioFileItem[] {
   const results: AudioFileItem[] = [];
 
   function walk(currentDir: string): void {

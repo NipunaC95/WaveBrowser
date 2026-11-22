@@ -58,7 +58,7 @@ function createWindow(): void {
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 18, y: 18 },
     backgroundColor: '#000000',
-    title: 'x.audio',
+    title: 'WaveBrowse',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -121,7 +121,7 @@ ipcMain.handle('fs:getFolderTree', async (_event, dirPath: string) => {
 // IPC: Scan audio files in directory
 ipcMain.handle('fs:scanAudioFiles', async (_event, options: ScanOptions) => {
   if (!options?.dirPath || !fs.existsSync(options.dirPath)) return [];
-  return scanAudioFiles(options.dirPath, options.recursive ?? false);
+  return scanAudioFiles(options.dirPath, options.recursive ?? true);
 });
 
 // IPC: Read audio metadata with music-metadata
