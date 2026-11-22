@@ -6,6 +6,11 @@ directories:
   output: releases
   buildResources: assets
 
+publish:
+  provider: github
+  owner: NipunaC95
+  repo: audio-asset-manager
+
 files:
   - dist/**/*
   - assets/**/*
@@ -55,3 +60,11 @@ nsis:
   createDesktopShortcut: always
   createStartMenuShortcut: true
   shortcutName: WaveBrowse
+
+linux:
+  category: Audio
+  icon: assets/icon.png
+  target:
+    - target: AppImage
+      arch:
+        - x64
