@@ -1,0 +1,161 @@
+@use 'variables' as *;
+@use 'mixins' as *;
+
+.master-player-dock {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 104px;
+  @include glassmorphism(16px);
+  border-top: 1px solid $border-color;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 20px;
+  z-index: 50;
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+.player-info {
+  width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.player-title {
+  font-size: 13px;
+  font-weight: 600;
+  @include text-truncate;
+  color: $text-main;
+}
+
+.player-meta {
+  font-size: 11px;
+  color: $text-dim;
+  @include text-truncate;
+}
+
+.player-waveform-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 100%;
+  justify-content: center;
+}
+
+.master-waveform-canvas {
+  width: 100%;
+  height: 48px;
+  border-radius: $radius-md;
+  background: rgba(10, 12, 16, 0.6);
+  cursor: pointer;
+  display: block;
+}
+
+.player-time-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: $text-dim;
+}
+
+.player-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-transport {
+  background: $bg-surface-elevated;
+  border: 1px solid $border-color;
+  color: $text-main;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  @include flex-center;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: $accent-cyan;
+    color: $accent-cyan;
+    transform: scale(1.05);
+  }
+
+  &.primary {
+    width: 44px;
+    height: 44px;
+    background: linear-gradient(135deg, $accent-cyan, $accent-blue);
+    color: #0c0e14;
+    font-size: 16px;
+    border: none;
+    box-shadow: 0 0 14px $accent-glow;
+
+    &:hover {
+      transform: scale(1.08);
+      box-shadow: 0 0 20px $accent-cyan;
+    }
+  }
+
+  &.active {
+    background: rgba($accent-cyan, 0.2);
+    border-color: $accent-cyan;
+    color: $accent-cyan;
+  }
+}
+
+.daw-drag-chip {
+  @include flex-center;
+  gap: 8px;
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  border: 1px solid rgba($accent-cyan, 0.4);
+  padding: 8px 14px;
+  border-radius: $radius-pill;
+  color: $accent-cyan;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: grab;
+  box-shadow: 0 0 10px rgba($accent-cyan, 0.15);
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: linear-gradient(135deg, #334155, #1e293b);
+    border-color: $accent-cyan;
+    transform: translateY(-2px);
+    box-shadow: 0 0 16px $accent-cyan;
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.volume-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  .volume-slider {
+    width: 60px;
+    accent-color: $accent-cyan;
+    cursor: pointer;
+  }
+}
+
+.speed-select {
+  background: $bg-surface-elevated;
+  border: 1px solid $border-color;
+  color: $text-muted;
+  border-radius: $radius-sm;
+  font-size: 11px;
+  padding: 4px 6px;
+  outline: none;
+  cursor: pointer;
+}

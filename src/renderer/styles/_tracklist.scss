@@ -1,0 +1,187 @@
+@use 'variables' as *;
+@use 'mixins' as *;
+
+.track-table-container {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 110px;
+  contain: strict;
+  transform: translateZ(0);
+  @include custom-scrollbar;
+}
+
+.track-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+
+  thead {
+    position: sticky;
+    top: 0;
+    background: $bg-dark;
+    z-index: 10;
+    border-bottom: 1px solid $border-color;
+  }
+
+  th {
+    padding: 10px 14px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: $text-dim;
+  }
+
+  td {
+    padding: 8px 14px;
+    font-size: 13px;
+    vertical-align: middle;
+  }
+}
+
+.track-row {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  transition: background 0.15s ease;
+  cursor: pointer;
+  contain: layout style;
+
+  &:hover {
+    background: $bg-surface;
+  }
+
+  &.playing {
+    background: $playing-glow;
+    border-left: 3px solid $accent-cyan;
+
+    .btn-row-play {
+      background: $accent-cyan;
+      color: #0b0f19;
+      border-color: $accent-cyan;
+      box-shadow: 0 0 10px $accent-glow;
+    }
+  }
+
+  &.selected {
+    background: rgba(255, 255, 255, 0.06);
+  }
+}
+
+.btn-row-play {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: $bg-surface-elevated;
+  color: $text-main;
+  @include flex-center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 11px;
+
+  &:hover {
+    border-color: $accent-cyan;
+    color: $accent-cyan;
+    transform: scale(1.06);
+  }
+}
+
+.drag-handle-cell {
+  width: 32px;
+  text-align: center;
+}
+
+.drag-handle {
+  @include flex-center;
+  width: 26px;
+  height: 26px;
+  border-radius: $radius-sm;
+  color: $text-dim;
+  cursor: grab;
+  font-size: 14px;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: $bg-surface-elevated;
+    color: $accent-cyan;
+    box-shadow: 0 0 8px $accent-glow;
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.track-title {
+  font-weight: 500;
+  color: $text-main;
+  @include text-truncate;
+  max-width: 280px;
+}
+
+.format-tag {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: $radius-sm;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  background: rgba(255, 255, 255, 0.08);
+  color: $text-muted;
+
+  &.wav { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
+  &.mp3 { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
+  &.flac { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+  &.aiff { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+}
+
+.waveform-cell {
+  width: 220px;
+}
+
+.mini-waveform-canvas {
+  width: 200px;
+  height: 32px;
+  display: block;
+  border-radius: $radius-sm;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.25);
+  transition: background 0.2s;
+  transform: translateZ(0);
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.45);
+  }
+}
+
+.btn-action-icon {
+  background: transparent;
+  border: none;
+  color: $text-dim;
+  font-size: 14px;
+  padding: 6px;
+  border-radius: $radius-sm;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+
+  &:hover {
+    color: $text-main;
+    background: $bg-surface-elevated;
+  }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 350px;
+  color: $text-dim;
+  gap: 12px;
+  text-align: center;
+  padding: 20px;
+
+  .empty-state-icon {
+    font-size: 48px;
+    opacity: 0.5;
+  }
+}

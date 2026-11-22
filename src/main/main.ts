@@ -1,4 +1,4 @@
-import { app, BrowserWindow, protocol, net, ipcMain, dialog, shell } from 'electron';
+import { app, BrowserWindow, protocol, net, ipcMain, dialog, shell, nativeImage } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import { pathToFileURL } from 'url';
@@ -23,9 +23,35 @@ protocol.registerSchemesAsPrivileged([
 
 let mainWindow: BrowserWindow | null = null;
 
+// Embedded 32x32 transparent PNG for guaranteed fail-safe drag icon
+const DEFAULT_DRAG_ICON_DATA_URL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAA7SURBVFhH7c6xEQAgCMRAw/6r74cKWQATb+5Lq1rnTq3H+g/8CjABJjAJMIExAZMAB8AE/k2AExyAF67XAw8/Fp8VAAAAAElFTkSuQmCC';
+let cachedDragIcon: Electron.NativeImage | null = null;
+
+function getSafeDragIcon(): Electron.NativeImage {
+  if (cachedDragIcon && !cachedDragIcon.isEmpty()) {
+    return cachedDragIcon;
+  }
+
+  const iconPath = path.join(__dirname, '..', 'assets', 'drag-icon.png');
+  if (fs.existsSync(iconPath)) {
+    try {
+      const img = nativeImage.createFromPath(iconPath);
+      if (!img.isEmpty()) {
+        cachedDragIcon = img;
+        return cachedDragIcon;
+      }
+    } catch {
+      // Fallback below
+    }
+  }
+
+  cachedDragIcon = nativeImage.createFromDataURL(DEFAULT_DRAG_ICON_DATA_URL);
+  return cachedDragIcon;
+}
+
 function createWindow(): void {
   mainWindow = new BrowserWindow({
-    width: 1240,
+    width: 1260,
     height: 840,
     minWidth: 920,
     minHeight: 620,
@@ -122,11 +148,15 @@ ipcMain.handle('fs:getMetadata', async (_event, filePath: string): Promise<Audio
 // IPC: Native drag and drop to ANY external software (DAWs, Finder, Premiere, etc.)
 ipcMain.on('start-drag', (event, filePath: string) => {
   if (!filePath || !fs.existsSync(filePath)) return;
-  const iconPath = path.join(__dirname, '..', 'assets', 'drag-icon.png');
-  event.sender.startDrag({
-    file: filePath,
-    icon: fs.existsSync(iconPath) ? iconPath : ''
-  });
+  try {
+    const icon = getSafeDragIcon();
+    event.sender.startDrag({
+      file: filePath,
+      icon
+    });
+  } catch (err) {
+    console.error('Safe drag start error handled:', err);
+  }
 });
 
 // IPC: Reveal in macOS Finder
@@ -152,4 +182,3 @@ ipcMain.handle('app:getDemoPath', async (): Promise<string | null> => {
   const demoPath = path.join(__dirname, '..', 'demo-samples');
   return fs.existsSync(demoPath) ? demoPath : null;
 });
-

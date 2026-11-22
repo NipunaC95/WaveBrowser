@@ -1,0 +1,64 @@
+@use 'variables' as *;
+@use 'mixins' as *;
+
+.top-titlebar {
+  height: 48px;
+  background: $bg-surface;
+  border-bottom: 1px solid $border-color;
+  display: flex;
+  align-items: center;
+  padding-left: 84px; // macOS traffic light spacing
+  padding-right: 18px;
+  -webkit-app-region: drag;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.brand-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  background: linear-gradient(135deg, $accent-cyan, $accent-blue);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.brand-icon {
+  font-size: 18px;
+  -webkit-text-fill-color: initial;
+}
+
+.titlebar-actions {
+  -webkit-app-region: no-drag;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.keyboard-hints {
+  font-size: 11px;
+  color: $text-dim;
+  display: flex;
+  gap: 12px;
+
+  .kbd {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 5px;
+    border-radius: 3px;
+    color: $text-muted;
+  }
+}
+
+.breadcrumbs {
+  padding: 8px 18px;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid $border-color;
+  font-size: 12px;
+  color: $text-dim;
+  @include text-truncate;
+  flex-shrink: 0;
+}
