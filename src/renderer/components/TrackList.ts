@@ -247,9 +247,14 @@ export class TrackListComponent {
   }
 
   private formatTime(seconds: number): string {
-    if (!seconds || isNaN(seconds)) return '0:00.0';
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
+    if (!seconds || isNaN(seconds) || seconds <= 0) return '--:--';
+    const totalSecs = Math.floor(seconds);
+    const hours = Math.floor(totalSecs / 3600);
+    const mins = Math.floor((totalSecs % 3600) / 60);
+    const secs = totalSecs % 60;
+    if (hours > 0) {
+      return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
     const tenths = Math.floor((seconds % 1) * 10);
     return `${mins}:${secs.toString().padStart(2, '0')}.${tenths}`;
   }

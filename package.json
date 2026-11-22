@@ -6,6 +6,11 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "build": "tsx build.ts",
+    "pack": "tsx build.ts && electron-builder --dir",
+    "dist": "tsx build.ts && electron-builder",
+    "dist:mac": "tsx build.ts && electron-builder --mac",
+    "dist:win": "tsx build.ts && electron-builder --win",
+    "dist:linux": "tsx build.ts && electron-builder --linux",
     "start": "tsx build.ts && env -u ELECTRON_RUN_AS_NODE electron .",
     "dev": "tsx build.ts && env -u ELECTRON_RUN_AS_NODE electron ."
   },
@@ -25,6 +30,7 @@
   "devDependencies": {
     "@types/node": "26.6.6",
     "electron": "33.4.11",
+    "electron-builder": "^26.18.0",
     "esbuild": "0.28.2",
     "rimraf": "6.1.4",
     "sass": "^1.108.2",

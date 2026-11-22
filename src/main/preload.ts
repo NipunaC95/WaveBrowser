@@ -6,6 +6,7 @@ const api: ElectronApi = {
   getFolderTree: (dirPath: string) => ipcRenderer.invoke('fs:getFolderTree', dirPath),
   scanAudioFiles: (options: ScanOptions) => ipcRenderer.invoke('fs:scanAudioFiles', options),
   getMetadata: (filePath: string) => ipcRenderer.invoke('fs:getMetadata', filePath),
+  getAudioPeaks: (filePath: string, bars = 160) => ipcRenderer.invoke('fs:getAudioPeaks', filePath, bars),
   startDrag: (filePath: string) => ipcRenderer.send('start-drag', filePath),
   revealInFinder: (filePath: string) => ipcRenderer.invoke('shell:revealInFinder', filePath),
   openExternal: (filePath: string) => ipcRenderer.invoke('shell:openExternal', filePath),
@@ -17,4 +18,3 @@ const api: ElectronApi = {
 };
 
 contextBridge.exposeInMainWorld('api', api);
-

@@ -1,0 +1,47 @@
+appId: com.wavebrowse.app
+productName: WaveBrowse
+copyright: Copyright © 2026 Nipuna Chandimal
+
+directories:
+  output: release
+  buildResources: assets
+
+files:
+  - dist/**/*
+  - assets/**/*
+  - demo-samples/**/*
+  - package.json
+
+asar: true
+
+mac:
+  category: public.app-category.music
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+    - target: zip
+      arch:
+        - x64
+        - arm64
+  minimumSystemVersion: "10.15.0"
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+
+linux:
+  category: Audio
+  target:
+    - target: AppImage
+      arch:
+        - x64

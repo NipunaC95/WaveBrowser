@@ -9,6 +9,7 @@ export class AudioPlayer {
   private isLooping = false;
   private playbackRate = 1.0;
   private animFrameId: number | null = null;
+  private pendingStartRatio = 0;
 
   public onPlayStateChange: PlaybackStateChangeCallback | null = null;
   public onTimeUpdate: TimeUpdateCallback | null = null;
@@ -35,9 +36,30 @@ export class AudioPlayer {
       }
     });
 
-    // Fallback sync on seek
+    this.audio.addEventListener('loadedmetadata', () => {
+      const dur = this.getDuration();
+      if (this.pendingStartRatio > 0 && dur > 0) {
+        this.audio.currentTime = Math.max(0, Math.min(dur, this.pendingStartRatio * dur));
+        this.pendingStartRatio = 0;
+      }
+      this.dispatchCurrentTime();
+    });
+
+    this.audio.addEventListener('canplay', () => {
+      const dur = this.getDuration();
+      if (this.pendingStartRatio > 0 && dur > 0) {
+        this.audio.currentTime = Math.max(0, Math.min(dur, this.pendingStartRatio * dur));
+        this.pendingStartRatio = 0;
+      }
+      this.dispatchCurrentTime();
+    });
+
     this.audio.addEventListener('seeked', () => {
       this.dispatchCurrentTime();
+    });
+
+    this.audio.addEventListener('error', () => {
+      console.warn('HTML5 Audio playback notice:', this.audio.error);
     });
   }
 
@@ -62,8 +84,8 @@ export class AudioPlayer {
 
   private dispatchCurrentTime(): void {
     const cur = this.audio.currentTime || 0;
-    const dur = this.audio.duration || 0;
-    const ratio = dur > 0 ? cur / dur : 0;
+    const dur = this.getDuration();
+    const ratio = dur > 0 ? Math.max(0, Math.min(1, cur / dur)) : 0;
     if (this.onTimeUpdate) {
       this.onTimeUpdate(cur, dur, ratio);
     }
@@ -78,7 +100,11 @@ export class AudioPlayer {
   }
 
   getDuration(): number {
-    return this.audio.duration || 0;
+    const rawDur = this.audio.duration;
+    if (isFinite(rawDur) && rawDur > 0) {
+      return rawDur;
+    }
+    return this.currentTrack?.duration || 0;
   }
 
   getCurrentTime(): number {
@@ -98,8 +124,14 @@ export class AudioPlayer {
     this.audio.playbackRate = this.playbackRate;
     this.audio.loop = this.isLooping;
 
-    if (startRatio > 0 && this.audio.duration) {
-      this.audio.currentTime = startRatio * this.audio.duration;
+    const dur = this.getDuration();
+    if (startRatio > 0) {
+      if (dur > 0) {
+        this.audio.currentTime = Math.max(0, Math.min(dur, startRatio * dur));
+        this.pendingStartRatio = 0;
+      } else {
+        this.pendingStartRatio = startRatio;
+      }
     }
 
     try {
@@ -124,9 +156,12 @@ export class AudioPlayer {
   }
 
   seek(ratio: number): void {
-    if (this.audio.duration) {
-      this.audio.currentTime = Math.max(0, Math.min(this.audio.duration, ratio * this.audio.duration));
+    const dur = this.getDuration();
+    if (dur > 0) {
+      this.audio.currentTime = Math.max(0, Math.min(dur, ratio * dur));
       this.dispatchCurrentTime();
+    } else {
+      this.pendingStartRatio = ratio;
     }
   }
 

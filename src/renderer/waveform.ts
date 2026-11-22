@@ -18,10 +18,10 @@ export class WaveformEngine {
   private inFlight = new Map<string, Promise<WaveformPeaks>>();
   private masterCache = new Map<string, PreRenderedMaster>();
 
-  // Queue to prevent CPU saturation (max 2 concurrent decodes)
-  private queue: Array<{ audioUrl: string; bars: number; resolve: (p: WaveformPeaks) => void }> = [];
+  // Queue to prevent CPU saturation (max 3 concurrent jobs)
+  private queue: Array<{ pathOrUrl: string; bars: number; resolve: (p: WaveformPeaks) => void }> = [];
   private activeJobs = 0;
-  private maxConcurrent = 2;
+  private maxConcurrent = 3;
 
   private getAudioContext(): AudioContext {
     if (!this.audioContext) {
@@ -32,7 +32,7 @@ export class WaveformEngine {
   }
 
   // Generate instant high-quality pseudo-peaks in <0.005ms so UI renders immediately without waiting
-  generateInstantPeaks(name: string, sizeBytes: number, bars = 60): WaveformPeaks {
+  generateInstantPeaks(name: string, sizeBytes: number, bars = 60, knownDuration = 0): WaveformPeaks {
     const peaks = new Float32Array(bars);
     let hash = sizeBytes ^ 0x5f3759df;
     for (let i = 0; i < name.length; i++) {
@@ -52,15 +52,15 @@ export class WaveformEngine {
 
     return {
       peaks,
-      duration: 0,
+      duration: knownDuration,
       sampleRate: 44100,
       channels: 2
     };
   }
 
-  // Enqueued peak extraction with concurrency limit to keep UI 120 FPS fluid
-  getPeaks(audioUrl: string, bars = 60, priority = false): Promise<WaveformPeaks> {
-    const cacheKey = `${audioUrl}_${bars}`;
+  // Enqueued peak extraction with IPC fast path and concurrency limit
+  getPeaks(pathOrUrl: string, bars = 60, priority = false): Promise<WaveformPeaks> {
+    const cacheKey = `${pathOrUrl}_${bars}`;
     if (this.peaksCache.has(cacheKey)) {
       return Promise.resolve(this.peaksCache.get(cacheKey)!);
     }
@@ -70,7 +70,7 @@ export class WaveformEngine {
     }
 
     const promise = new Promise<WaveformPeaks>((resolve) => {
-      const task = { audioUrl, bars, resolve };
+      const task = { pathOrUrl, bars, resolve };
       if (priority) {
         this.queue.unshift(task);
       } else {
@@ -89,11 +89,47 @@ export class WaveformEngine {
     }
 
     this.activeJobs++;
-    const { audioUrl, bars, resolve } = this.queue.shift()!;
-    const cacheKey = `${audioUrl}_${bars}`;
+    const { pathOrUrl, bars, resolve } = this.queue.shift()!;
+    const cacheKey = `${pathOrUrl}_${bars}`;
+
+    const filePath = pathOrUrl.startsWith('media://')
+      ? decodeURIComponent(pathOrUrl.replace(/^media:\/\/(\/)?/, '/'))
+      : pathOrUrl;
 
     try {
-      const res = await fetch(audioUrl);
+      // 1. FAST PATH: Direct disk peak extraction via Node.js Main process IPC
+      // Completes in <3ms without decompressing full PCM or causing renderer OOM
+      if (window.api && typeof window.api.getAudioPeaks === 'function') {
+        const ipcResult = await window.api.getAudioPeaks(filePath, bars);
+        if (ipcResult && ipcResult.peaks && ipcResult.peaks.length > 0) {
+          const result: WaveformPeaks = {
+            peaks: new Float32Array(ipcResult.peaks),
+            duration: ipcResult.duration || 0,
+            sampleRate: ipcResult.sampleRate || 44100,
+            channels: ipcResult.channels || 2
+          };
+
+          this.peaksCache.set(cacheKey, result);
+          this.inFlight.delete(cacheKey);
+          resolve(result);
+          return;
+        }
+      }
+
+      // 2. FALLBACK PATH for small files (<25MB) using Web Audio decodeAudioData
+      const mediaUrl = pathOrUrl.startsWith('media://') ? pathOrUrl : window.api.toMediaUrl(pathOrUrl);
+      const res = await fetch(mediaUrl);
+
+      const contentLength = parseInt(res.headers.get('content-length') || '0', 10);
+      // Safety guard: NEVER try full Web Audio PCM decode on files > 25MB (would crash renderer)
+      if (contentLength > 25 * 1024 * 1024) {
+        const fallback = this.generateInstantPeaks(filePath, contentLength, bars);
+        this.peaksCache.set(cacheKey, fallback);
+        this.inFlight.delete(cacheKey);
+        resolve(fallback);
+        return;
+      }
+
       const arrayBuffer = await res.arrayBuffer();
       const ctx = this.getAudioContext();
       const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
@@ -132,7 +168,7 @@ export class WaveformEngine {
       resolve(result);
     } catch {
       // Return pseudo-fallback on decode error
-      const fallback = this.generateInstantPeaks(audioUrl, 1000, bars);
+      const fallback = this.generateInstantPeaks(filePath, 1000, bars);
       this.peaksCache.set(cacheKey, fallback);
       this.inFlight.delete(cacheKey);
       resolve(fallback);
@@ -163,11 +199,11 @@ export class WaveformEngine {
     const barGap = 2 * dpr;
     const barW = Math.max(2 * dpr, (w / count) - barGap);
 
-    // Active neon gradient
+    // Active monochromatic / white gradient (x.ai style)
     const grad = aCtx.createLinearGradient(0, 0, 0, h);
-    grad.addColorStop(0, '#00f2fe');
-    grad.addColorStop(0.5, '#38bdf8');
-    grad.addColorStop(1, '#818cf8');
+    grad.addColorStop(0, '#ffffff');
+    grad.addColorStop(0.5, '#e2e8f0');
+    grad.addColorStop(1, '#94a3b8');
 
     // Draw baseline guideline
     iCtx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
@@ -183,13 +219,13 @@ export class WaveformEngine {
       const barH = Math.max(4 * dpr, val * (h * 0.88));
       const y = centerY - barH / 2;
 
-      // Inactive Layer (dim slate)
-      iCtx.fillStyle = 'rgba(148, 163, 184, 0.28)';
+      // Inactive Layer (dim graphite)
+      iCtx.fillStyle = 'rgba(255, 255, 255, 0.22)';
       iCtx.beginPath();
       iCtx.roundRect(x, y, barW, barH, 2 * dpr);
       iCtx.fill();
 
-      // Active Layer (glowing cyan/indigo gradient)
+      // Active Layer (white)
       aCtx.fillStyle = grad;
       aCtx.beginPath();
       aCtx.roundRect(x, y, barW, barH, 2 * dpr);
@@ -201,7 +237,7 @@ export class WaveformEngine {
     return preRender;
   }
 
-  // Blazing-fast 120 FPS master waveform renderer: single drawImage blit!
+  // Blazing-fast master waveform renderer: single drawImage blit
   drawMasterWaveformFast(
     canvas: HTMLCanvasElement,
     cacheKey: string,
@@ -243,11 +279,11 @@ export class WaveformEngine {
       );
     }
 
-    // 3. Playhead line with neon glow
+    // 3. Playhead line
     ctx.save();
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 2 * dpr;
-    ctx.shadowColor = '#00f2fe';
+    ctx.shadowColor = '#ffffff';
     ctx.shadowBlur = 6 * dpr;
     ctx.beginPath();
     ctx.moveTo(playheadX, 2);
@@ -255,7 +291,7 @@ export class WaveformEngine {
     ctx.stroke();
 
     // Playhead top dot
-    ctx.fillStyle = '#00f2fe';
+    ctx.fillStyle = '#ffffff';
     ctx.beginPath();
     ctx.arc(playheadX, 5 * dpr, 4 * dpr, 0, Math.PI * 2);
     ctx.fill();

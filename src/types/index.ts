@@ -32,6 +32,13 @@ export interface AudioMetadata {
   artist: string | null;
 }
 
+export interface AudioPeaksData {
+  peaks: number[];
+  duration: number;
+  sampleRate: number;
+  channels: number;
+}
+
 export interface ScanOptions {
   dirPath: string;
   recursive?: boolean;
@@ -42,6 +49,7 @@ export interface ElectronApi {
   getFolderTree(dirPath: string): Promise<FolderNode | null>;
   scanAudioFiles(options: ScanOptions): Promise<AudioFileItem[]>;
   getMetadata(filePath: string): Promise<AudioMetadata | null>;
+  getAudioPeaks(filePath: string, bars?: number): Promise<AudioPeaksData | null>;
   startDrag(filePath: string): void;
   revealInFinder(filePath: string): Promise<boolean>;
   openExternal(filePath: string): Promise<boolean>;
@@ -54,4 +62,3 @@ declare global {
     api: ElectronApi;
   }
 }
-

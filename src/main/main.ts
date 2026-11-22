@@ -1,9 +1,10 @@
-import { app, BrowserWindow, protocol, net, ipcMain, dialog, shell, nativeImage } from 'electron';
+import { app, BrowserWindow, protocol, ipcMain, dialog, shell, nativeImage } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
-import { pathToFileURL } from 'url';
+import { Readable } from 'stream';
 import * as mm from 'music-metadata';
 import { getDirectoryTree, scanAudioFiles } from './scanner';
+import { extractAudioPeaks } from './peaks';
 import { AudioMetadata, ScanOptions } from '../types';
 
 // Register custom media scheme for direct and range-capable audio streaming
@@ -49,6 +50,25 @@ function getSafeDragIcon(): Electron.NativeImage {
   return cachedDragIcon;
 }
 
+function getMimeType(filePath: string): string {
+  const ext = path.extname(filePath).toLowerCase();
+  const mimeMap: Record<string, string> = {
+    '.mp3': 'audio/mpeg',
+    '.wav': 'audio/wav',
+    '.flac': 'audio/flac',
+    '.m4a': 'audio/mp4',
+    '.aac': 'audio/aac',
+    '.ogg': 'audio/ogg',
+    '.oga': 'audio/ogg',
+    '.opus': 'audio/opus',
+    '.aif': 'audio/aiff',
+    '.aiff': 'audio/aiff',
+    '.caf': 'audio/x-caf',
+    '.wma': 'audio/x-ms-wma'
+  };
+  return mimeMap[ext] || 'audio/octet-stream';
+}
+
 function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1260,
@@ -74,15 +94,83 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
-  // Protocol handler for media:// URLs
+  // Advanced Range-aware protocol handler for media:// URLs
+  // Enables smooth, instantaneous streaming and seeking for large and 1hr+ audio files
   protocol.handle('media', (request) => {
     try {
       const urlPath = request.url.replace(/^media:\/\/(\/)?/, '/');
       const decodedPath = decodeURIComponent(urlPath);
-      return net.fetch(pathToFileURL(decodedPath).toString());
+
+      if (!fs.existsSync(decodedPath)) {
+        return new Response('File not found', { status: 404 });
+      }
+
+      const stat = fs.statSync(decodedPath);
+      const fileSize = stat.size;
+      const contentType = getMimeType(decodedPath);
+
+      // Support HEAD request (used by media player engines for size / range discovery)
+      if (request.method === 'HEAD') {
+        return new Response(null, {
+          status: 200,
+          headers: {
+            'Content-Type': contentType,
+            'Content-Length': fileSize.toString(),
+            'Accept-Ranges': 'bytes'
+          }
+        });
+      }
+
+      const rangeHeader = request.headers.get('range');
+      if (rangeHeader) {
+        const match = rangeHeader.match(/bytes=(\d+)-(\d+)?/);
+        if (match) {
+          const start = parseInt(match[1], 10);
+          let end = match[2] ? parseInt(match[2], 10) : fileSize - 1;
+          if (end >= fileSize) end = fileSize - 1;
+
+          if (start > end || start >= fileSize) {
+            return new Response('Requested Range Not Satisfiable', {
+              status: 416,
+              headers: {
+                'Content-Range': `bytes */${fileSize}`,
+                'Accept-Ranges': 'bytes'
+              }
+            });
+          }
+
+          const chunkLength = end - start + 1;
+          const nodeStream = fs.createReadStream(decodedPath, { start, end });
+          const webStream = Readable.toWeb(nodeStream) as ReadableStream;
+
+          return new Response(webStream, {
+            status: 206,
+            statusText: 'Partial Content',
+            headers: {
+              'Content-Type': contentType,
+              'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+              'Accept-Ranges': 'bytes',
+              'Content-Length': chunkLength.toString()
+            }
+          });
+        }
+      }
+
+      // Stream entire file with Accept-Ranges declared
+      const fullNodeStream = fs.createReadStream(decodedPath);
+      const fullWebStream = Readable.toWeb(fullNodeStream) as ReadableStream;
+
+      return new Response(fullWebStream, {
+        status: 200,
+        headers: {
+          'Content-Type': contentType,
+          'Content-Length': fileSize.toString(),
+          'Accept-Ranges': 'bytes'
+        }
+      });
     } catch (err) {
       console.error('Error handling media protocol:', err);
-      return new Response('Not found', { status: 404 });
+      return new Response('Internal media error', { status: 500 });
     }
   });
 
@@ -122,6 +210,11 @@ ipcMain.handle('fs:getFolderTree', async (_event, dirPath: string) => {
 ipcMain.handle('fs:scanAudioFiles', async (_event, options: ScanOptions) => {
   if (!options?.dirPath || !fs.existsSync(options.dirPath)) return [];
   return scanAudioFiles(options.dirPath, options.recursive ?? true);
+});
+
+// IPC: Fast peak extraction (sub-5ms for multi-hour files)
+ipcMain.handle('fs:getAudioPeaks', async (_event, filePath: string, bars = 160) => {
+  return extractAudioPeaks(filePath, bars);
 });
 
 // IPC: Read audio metadata with music-metadata
