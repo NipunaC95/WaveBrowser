@@ -1,7 +1,7 @@
 {
   "name": "wavebrowse",
   "version": "1.0.0",
-  "description": "Lightning-fast audio sample previewer with waveforms and native drag-and-drop to any DAW or software",
+  "description": "Pro-grade desktop audio asset manager & sample library browser with GPU-accelerated WebGL waveforms and native drag-and-drop to any DAW, NLE, or game engine",
   "main": "dist/main.js",
   "scripts": {
     "typecheck": "tsc --noEmit",
