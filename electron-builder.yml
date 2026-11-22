@@ -3,7 +3,7 @@ productName: WaveBrowse
 copyright: Copyright © 2026 Nipuna Chandimal
 
 directories:
-  output: release
+  output: releases
   buildResources: assets
 
 files:
@@ -16,20 +16,36 @@ asar: true
 
 mac:
   category: public.app-category.music
+  icon: assets/icon.icns
   target:
     - target: dmg
       arch:
-        - x64
         - arm64
+        - x64
     - target: zip
       arch:
-        - x64
         - arm64
+        - x64
   minimumSystemVersion: "10.15.0"
+  identity: null
+
+dmg:
+  title: "${productName} ${version}"
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
 
 win:
+  icon: assets/icon.ico
   target:
     - target: nsis
+      arch:
+        - x64
+    - target: zip
       arch:
         - x64
 
@@ -38,10 +54,4 @@ nsis:
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: always
   createStartMenuShortcut: true
-
-linux:
-  category: Audio
-  target:
-    - target: AppImage
-      arch:
-        - x64
+  shortcutName: WaveBrowse
