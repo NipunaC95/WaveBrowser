@@ -155,3 +155,4 @@ export class MasterPlayerComponent {
     return `${mins}:${secs.toString().padStart(2, '0')}.${tenths}`;
   }
 }
+

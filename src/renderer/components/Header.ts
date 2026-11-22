@@ -13,3 +13,4 @@ export class HeaderComponent {
     this.breadcrumbsEl.textContent = path || 'No folder selected';
   }
 }
+

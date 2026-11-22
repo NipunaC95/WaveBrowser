@@ -58,3 +58,4 @@ export class SidebarComponent {
     this.folderDropZone.addEventListener('drop', handleDrop);
   }
 }
+

@@ -1,14 +1,24 @@
 import * as esbuild from 'esbuild';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as sass from 'sass';
 
 async function build() {
-  console.log('⚡ Starting TypeScript build...');
+  console.log('⚡ Starting TypeScript & SCSS build...');
 
   // Ensure output directory
   fs.mkdirSync('dist/renderer', { recursive: true });
 
-  // 1. Build Main Process
+  // 1. Compile Modular SCSS to CSS
+  console.log('🎨 Compiling SCSS modules...');
+  const scssResult = sass.compile('src/renderer/styles/main.scss', {
+    style: 'compressed',
+    sourceMap: false
+  });
+  fs.writeFileSync('dist/renderer/style.css', scssResult.css);
+
+  // 2. Build Main Process TypeScript
+  console.log('🖥️  Bundling Electron Main process...');
   await esbuild.build({
     entryPoints: ['src/main/main.ts'],
     bundle: true,
@@ -19,7 +29,8 @@ async function build() {
     sourcemap: true
   });
 
-  // 2. Build Preload Process
+  // 3. Build Preload Process TypeScript
+  console.log('🔗 Bundling Preload bridge...');
   await esbuild.build({
     entryPoints: ['src/main/preload.ts'],
     bundle: true,
@@ -30,7 +41,8 @@ async function build() {
     sourcemap: true
   });
 
-  // 3. Build Renderer TypeScript
+  // 4. Build Renderer TypeScript with Modular Components & WebGL
+  console.log('🚀 Bundling Renderer UI with WebGL...');
   await esbuild.build({
     entryPoints: ['src/renderer/app.ts'],
     bundle: true,
@@ -40,11 +52,10 @@ async function build() {
     sourcemap: true
   });
 
-  // 4. Copy static assets
+  // 5. Copy static assets
   fs.copyFileSync('src/renderer/index.html', 'dist/renderer/index.html');
-  fs.copyFileSync('src/renderer/style.css', 'dist/renderer/style.css');
 
-  console.log('✅ Build completed successfully in dist/');
+  console.log('✅ Build completed successfully in dist/ with WebGL & SCSS!');
 }
 
 build().catch((err) => {
