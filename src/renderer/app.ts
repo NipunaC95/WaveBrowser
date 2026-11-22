@@ -161,19 +161,24 @@ export class WaveBrowseApp {
       // Start playback
       await this.player.playTrack(track, startRatio);
 
-        // High-priority GPU real peaks upload
-        const mediaUrl = window.api.toMediaUrl(track.path);
-        this.waveformEngine.getPeaks(mediaUrl, 160, true).then((real) => {
-          if (this.player.getCurrentTrack()?.path === track.path) {
-            this.masterPlayer.setTrack(track, real.peaks);
-          }
-        });
+      // High-priority GPU real peaks upload
+      this.waveformEngine.getPeaks(track.path, 160, true).then((real) => {
+        if (real.duration > 0 && !track.duration) {
+          track.duration = real.duration;
+        }
+        if (this.player.getCurrentTrack()?.path === track.path) {
+          this.masterPlayer.setTrack(track, real.peaks);
+        }
+      });
 
-        // Load metadata asynchronously
-        window.api.getMetadata(track.path).then((meta: AudioMetadata | null) => {
-          if (this.player.getCurrentTrack()?.path === track.path) {
-            this.masterPlayer.updateMetadata(meta);
-          }
+      // Load metadata asynchronously
+      window.api.getMetadata(track.path).then((meta: AudioMetadata | null) => {
+        if (meta && meta.duration > 0 && !track.duration) {
+          track.duration = meta.duration;
+        }
+        if (this.player.getCurrentTrack()?.path === track.path) {
+          this.masterPlayer.updateMetadata(meta);
+        }
       });
   }
 

@@ -197,9 +197,8 @@ export class TrackListComponent {
     const entry = this.miniCanvases.get(trackPath);
     if (!entry) return;
 
-    const mediaUrl = window.api.toMediaUrl(trackPath);
     try {
-      const realPeaks = await this.waveformEngine.getPeaks(mediaUrl, 50, false);
+      const realPeaks = await this.waveformEngine.getPeaks(trackPath, 50, false);
       entry.peaks = realPeaks;
 
       const track = this.currentTracks.find((t) => t.path === trackPath);
