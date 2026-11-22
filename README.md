@@ -128,7 +128,18 @@ pnpm run typecheck
 pnpm start
 ```
 
-### Production Build
+### Production Build & Packaging
 ```bash
+# Compile TypeScript & SCSS
 pnpm run build
+
+# Package standalone executables for macOS and Windows into releases/
+pnpm run dist        # Builds both macOS and Windows
+pnpm run dist:mac    # Builds macOS (DMG & Zip for Apple Silicon & Intel)
+pnpm run dist:win    # Builds Windows (NSIS Installer .exe & Zip)
 ```
+
+Built binaries are output to the [`releases/`](file:///Users/nipunachandimal/Documents/Development/music%20browse/releases) directory:
+- **macOS (Apple Silicon)**: `releases/WaveBrowse-1.0.0-arm64.dmg` & `releases/WaveBrowse-1.0.0-arm64-mac.zip`
+- **macOS (Intel)**: `releases/WaveBrowse-1.0.0.dmg` & `releases/WaveBrowse-1.0.0-mac.zip`
+- **Windows**: `releases/WaveBrowse Setup 1.0.0.exe` (NSIS Installer) & `releases/WaveBrowse-1.0.0-win.zip`
