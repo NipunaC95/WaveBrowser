@@ -347,3 +347,4 @@ export async function extractAudioPeaks(filePath: string, bars = 160): Promise<A
   // Fallback to compressed sampler (MP3, FLAC, M4A, etc.)
   return sampleCompressedPeaks(filePath, bars);
 }
+
