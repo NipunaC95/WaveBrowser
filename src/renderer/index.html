@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WaveBrowse - Audio Sample Manager & Waveform Previewer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Top Window Drag Bar -->
+    <header class="top-titlebar">
+      <div class="brand-title">
+        <span class="brand-icon">🌊</span>
+        <span>WaveBrowse</span>
+      </div>
+      <div class="keyboard-hints">
+        <span><span class="kbd">Space</span> Play/Pause</span>
+        <span><span class="kbd">↑/↓</span> Navigate</span>
+        <span><span class="kbd">L</span> Loop</span>
+        <span><span class="kbd">Esc</span> Stop</span>
+      </div>
+      <div class="titlebar-actions">
+        <button id="btnLoadDemo" class="chip">Load Demo Samples</button>
+      </div>
+    </header>
+
+    <div class="main-layout">
+      <!-- Left Sidebar: Folder Navigation Tree -->
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <button id="btnOpenFolder" class="btn-choose-folder">
+            <span>📁</span> Open Folder...
+          </button>
+          <div class="sidebar-subtitle">Folder Structure</div>
+        </div>
+
+        <div id="treeContainer" class="tree-container">
+          <!-- Populated dynamically by FolderTreeUI -->
+        </div>
+
+        <div id="folderDropZone" class="sidebar-dropzone">
+          <span>Drop any music folder here</span>
+        </div>
+      </aside>
+
+      <!-- Main Audio Files View -->
+      <main class="main-view">
+        <!-- Filter and Search Toolbar -->
+        <section class="filter-bar">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput" class="search-input" placeholder="Search sounds, samples, tags...">
+          </div>
+
+          <div class="format-chips" id="formatFilters">
+            <button class="chip active" data-format="ALL">ALL</button>
+            <button class="chip" data-format="WAV">WAV</button>
+            <button class="chip" data-format="MP3">MP3</button>
+            <button class="chip" data-format="FLAC">FLAC</button>
+            <button class="chip" data-format="AIFF">AIFF</button>
+          </div>
+
+          <div class="toggle-group">
+            <label class="switch-label" title="Audition immediately when clicking or navigating tracks">
+              <input type="checkbox" id="chkAutoPlay" checked>
+              <span>Auto-Play</span>
+            </label>
+
+            <label class="switch-label" title="Show all audio files in subfolders too">
+              <input type="checkbox" id="chkRecursive">
+              <span>Include Subfolders</span>
+            </label>
+
+            <span id="fileCountBadge" class="file-counter-pill">0 files</span>
+          </div>
+        </section>
+
+        <!-- Current Breadcrumbs -->
+        <div id="breadcrumbs" class="breadcrumbs">No folder selected</div>
+
+        <!-- Track List Table -->
+        <div class="track-table-container">
+          <table class="track-table">
+            <thead>
+              <tr>
+                <th style="width: 44px; text-align: center;"></th>
+                <th style="width: 44px; text-align: center;" title="Drag file into any DAW (Ableton, FL Studio, Logic, etc.) or software">DRAG</th>
+                <th>NAME</th>
+                <th style="width: 70px;">TYPE</th>
+                <th style="width: 220px;">WAVEFORM</th>
+                <th style="width: 75px;">DURATION</th>
+                <th style="width: 75px;">SIZE</th>
+                <th style="width: 50px; text-align: center;">ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody id="trackListBody">
+              <!-- Dynamically populated rows -->
+            </tbody>
+          </table>
+
+          <div id="emptyState" class="empty-state">
+            <div class="empty-state-icon">🎵</div>
+            <h3>No audio files in this folder</h3>
+            <p>Select a music folder or drop one into the sidebar to preview waveforms and drag into your DAW.</p>
+          </div>
+        </div>
+
+        <!-- Master Floating Player Dock -->
+        <footer class="master-player-dock" id="masterPlayerDock">
+          <div class="player-info">
+            <div id="masterTrackTitle" class="player-title">No track selected</div>
+            <div id="masterTrackMeta" class="player-meta">Click any sound or waveform to preview</div>
+          </div>
+
+          <!-- Master Waveform Canvas -->
+          <div class="player-waveform-center">
+            <canvas id="masterWaveformCanvas" class="master-waveform-canvas" width="800" height="48"></canvas>
+            <div class="player-time-row">
+              <span id="timeCurrent">0:00.0</span>
+              <span id="timeDuration">0:00.0</span>
+            </div>
+          </div>
+
+          <!-- Transport Controls -->
+          <div class="player-controls">
+            <button id="btnLoop" class="btn-transport" title="Toggle Loop (L)">🔁</button>
+            <button id="btnPlayPause" class="btn-transport primary" title="Play / Pause (Space)">▶</button>
+            <button id="btnStop" class="btn-transport" title="Stop (Esc)">⏹</button>
+
+            <!-- Playback Speed -->
+            <select id="selectSpeed" class="speed-select" title="Playback Speed">
+              <option value="0.5">0.5x</option>
+              <option value="1.0" selected>1.0x</option>
+              <option value="1.5">1.5x</option>
+              <option value="2.0">2.0x</option>
+            </select>
+
+            <!-- Volume -->
+            <div class="volume-control">
+              <span style="font-size: 13px;">🔊</span>
+              <input type="range" id="volumeSlider" class="volume-slider" min="0" max="1" step="0.05" value="0.85">
+            </div>
+
+            <!-- Big DAW Drag Chip -->
+            <div id="masterDragChip" class="daw-drag-chip" draggable="true" title="Drag this audio file into Ableton Live, FL Studio, Logic Pro, Reaper, or Finder">
+              <span>⠿</span>
+              <span>DRAG TO DAW</span>
+            </div>
+          </div>
+        </footer>
+      </main>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
+
