@@ -57,8 +57,8 @@ function createWindow(): void {
     minHeight: 620,
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 18, y: 18 },
-    backgroundColor: '#0c0e14',
-    title: 'WaveBrowse',
+    backgroundColor: '#000000',
+    title: 'x.audio',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,

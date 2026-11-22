@@ -98,7 +98,7 @@ export class TrackListComponent {
       dragHandle.className = 'drag-handle';
       dragHandle.setAttribute('draggable', 'true');
       dragHandle.title = 'Drag into DAW or any software';
-      dragHandle.innerHTML = '⠿';
+      dragHandle.innerHTML = '::';
       dragHandle.addEventListener('dragstart', (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -158,7 +158,7 @@ export class TrackListComponent {
       const btnFinder = document.createElement('button');
       btnFinder.className = 'btn-action-icon';
       btnFinder.title = 'Reveal in Finder';
-      btnFinder.innerHTML = '📂';
+      btnFinder.innerHTML = '↗';
       btnFinder.addEventListener('click', (e) => {
         e.stopPropagation();
         this.handlers.onRevealFinder(track.path);
