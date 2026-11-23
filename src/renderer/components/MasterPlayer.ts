@@ -1,5 +1,6 @@
 import { AudioFileItem, AudioMetadata } from '../../types';
 import { WebGLWaveformRenderer } from './WebGLWaveform';
+import { ICONS } from '../icons';
 
 export interface MasterPlayerHandlers {
   onTogglePlay: () => void;
@@ -78,7 +79,7 @@ export class MasterPlayerComponent {
 
   setPlayState(isPlaying: boolean): void {
     this.isPlaying = isPlaying;
-    this.btnPlayPause.innerHTML = isPlaying ? '⏸' : '▶';
+    this.btnPlayPause.innerHTML = isPlaying ? ICONS.pause : ICONS.play;
     this.renderWaveform(this.lastProgress);
   }
 

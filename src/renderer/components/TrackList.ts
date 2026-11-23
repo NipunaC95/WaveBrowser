@@ -1,5 +1,6 @@
 import { AudioFileItem } from '../../types';
 import { WaveformEngine, WaveformPeaks } from '../waveform';
+import { ICONS } from '../icons';
 
 export interface TrackListHandlers {
   onPlayTrack: (index: number, seekRatio?: number) => void;
@@ -79,7 +80,7 @@ export class TrackListComponent {
       tdPlay.style.textAlign = 'center';
       const btnPlay = document.createElement('button');
       btnPlay.className = 'btn-row-play';
-      btnPlay.innerHTML = '▶';
+      btnPlay.innerHTML = ICONS.play;
       btnPlay.addEventListener('click', (e) => {
         e.stopPropagation();
         if (this.activeTrackPath === track.path && this.isCurrentlyPlaying) {
@@ -98,7 +99,7 @@ export class TrackListComponent {
       dragHandle.className = 'drag-handle';
       dragHandle.setAttribute('draggable', 'true');
       dragHandle.title = 'Drag into DAW or any software';
-      dragHandle.innerHTML = '::';
+      dragHandle.innerHTML = ICONS.gripVertical;
       dragHandle.addEventListener('dragstart', (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -158,7 +159,7 @@ export class TrackListComponent {
       const btnFinder = document.createElement('button');
       btnFinder.className = 'btn-action-icon';
       btnFinder.title = 'Reveal in Finder';
-      btnFinder.innerHTML = '↗';
+      btnFinder.innerHTML = ICONS.externalLink;
       btnFinder.addEventListener('click', (e) => {
         e.stopPropagation();
         this.handlers.onRevealFinder(track.path);
@@ -226,7 +227,7 @@ export class TrackListComponent {
 
       const playBtn = row.querySelector('.btn-row-play');
       if (playBtn) {
-        playBtn.innerHTML = isThis && isPlaying ? '⏸' : '▶';
+        playBtn.innerHTML = isThis && isPlaying ? ICONS.pause : ICONS.play;
       }
     });
   }

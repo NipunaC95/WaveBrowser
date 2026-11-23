@@ -1,22 +1,22 @@
-// CodeRabbit.ai Inspired Theme & shadcn/ui Design Tokens
+// shadcn/ui Dark Blue Theme Tokens
 
 // HSL / Hex Palette Tokens
-$bg-app: #0b0d13;                // Deep rich obsidian navy
-$bg-card: #11141e;               // Surface card
-$bg-card-hover: #161b29;         // Card hover state
-$bg-surface-elevated: #181d2d;   // Elevated panels & popovers
-$bg-surface-subtle: #141824;     // Muted surface containers
+$bg-app: #0a0d14;                // Deep rich obsidian navy
+$bg-card: #101522;               // Surface card
+$bg-card-hover: #161e30;         // Card hover state
+$bg-surface-elevated: #182236;   // Elevated panels & popovers
+$bg-surface-subtle: #131928;     // Muted surface containers
 
-// CodeRabbit Signature Brand Colors (Vibrant Coral Orange & Warm Amber)
-$primary: #ff6136;               // Signature CodeRabbit Coral
-$primary-hover: #ff744c;         // Coral hover
-$primary-active: #ea5025;        // Coral active click
-$primary-light: rgba(255, 97, 54, 0.14); // Translucent coral glow
-$primary-glow: rgba(255, 97, 54, 0.35);  // Radiant box-shadow
-$primary-gradient: linear-gradient(135deg, #ff6136 0%, #ff8a50 100%);
-$primary-gradient-subtle: linear-gradient(135deg, rgba(255, 97, 54, 0.16) 0%, rgba(255, 138, 80, 0.08) 100%);
+// Dark Blue & Royal Cobalt Primary Theme
+$primary: #2563eb;               // Royal Cobalt Blue
+$primary-hover: #3b82f6;         // Electric Blue hover
+$primary-active: #1d4ed8;        // Deep Blue active click
+$primary-light: rgba(37, 99, 235, 0.15); // Translucent blue glow
+$primary-glow: rgba(37, 99, 235, 0.38);  // Radiant box-shadow
+$primary-gradient: linear-gradient(135deg, #1e40af 0%, #2563eb 50%, #3b82f6 100%);
+$primary-gradient-subtle: linear-gradient(135deg, rgba(30, 64, 175, 0.22) 0%, rgba(37, 99, 235, 0.10) 100%);
 
-// AI Secondary Accents (Indigo & Cyan Highlights)
+// AI Secondary Accents
 $accent-violet: #818cf8;
 $accent-violet-subtle: rgba(129, 140, 248, 0.12);
 $accent-cyan: #38bdf8;
@@ -30,13 +30,13 @@ $foreground-muted: #94a3b8;      // Secondary / subheader text
 $foreground-dim: #64748b;        // Micro copy / placeholders
 $border-color: rgba(255, 255, 255, 0.08); // Fine 1px hairline border
 $border-hover: rgba(255, 255, 255, 0.16);
-$border-active: rgba(255, 97, 54, 0.5);   // Focused / active border
+$border-active: rgba(37, 99, 235, 0.55);  // Focused / active border
 $border-card: rgba(255, 255, 255, 0.06);
 
 // Format Tag Specific Colors
 $format-wav: #38bdf8;            // Cyan
 $format-mp3: #818cf8;            // Violet
-$format-flac: #ff6136;           // Coral
+$format-flac: #60a5fa;           // Blue
 $format-aiff: #fbbf24;           // Amber
 $format-ogg: #34d399;            // Emerald
 

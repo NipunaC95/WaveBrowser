@@ -19,7 +19,7 @@
   gap: 12px;
 }
 
-// shadcn/ui Primary Button (CodeRabbit Accent)
+// shadcn/ui Primary Button (Dark Blue Accent)
 .btn-choose-folder {
   @include btn-primary;
   width: 100%;
@@ -27,9 +27,10 @@
   font-size: 12px;
   border-radius: $radius-md;
 
-  .plus-icon {
-    font-size: 14px;
-    font-weight: 700;
+  svg {
+    width: 15px;
+    height: 15px;
+    stroke-width: 2.2;
   }
 }
 
@@ -90,10 +91,10 @@
     background: $primary-light;
     color: #ffffff;
     font-weight: 600;
-    border: 1px solid rgba(255, 97, 54, 0.25);
+    border: 1px solid rgba(37, 99, 235, 0.35);
 
     .tree-icon {
-      color: $primary;
+      color: $primary-hover;
     }
 
     .tree-badge {
@@ -105,22 +106,33 @@
 
 .tree-arrow {
   width: 14px;
-  font-family: $font-mono;
-  font-size: 11px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: $foreground-dim;
-  text-align: center;
-  transition: transform 0.15s ease;
+  transition: transform 0.15s ease, color 0.15s ease;
+
+  svg {
+    width: 12px;
+    height: 12px;
+  }
 
   &.expanded {
-    transform: rotate(90deg);
-    color: $primary;
+    color: $primary-hover;
   }
 }
 
 .tree-icon {
-  font-size: 13px;
+  display: flex;
+  align-items: center;
   color: $foreground-dim;
   transition: color 0.12s;
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
 }
 
 .tree-label {
@@ -149,7 +161,7 @@
   font-size: 12px;
 }
 
-// Import Dropzone with luminous CodeRabbit glowing dashed border
+// Import Dropzone with luminous Dark Blue glowing dashed border
 .sidebar-dropzone {
   margin: 12px;
   padding: 16px 12px;
@@ -169,22 +181,22 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 8px;
 
-    &::before {
-      content: "📥";
-      font-size: 12px;
+    svg {
+      width: 16px;
+      height: 16px;
     }
   }
 
   &:hover, &.dragover {
-    border-color: $primary;
+    border-color: $primary-hover;
     background: $primary-light;
     box-shadow: 0 0 20px $primary-glow;
     transform: translateY(-1px);
 
     .drop-text {
-      color: $primary;
+      color: $primary-hover;
     }
   }
 }

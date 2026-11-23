@@ -1,4 +1,5 @@
 import { FolderNode } from '../types';
+import { ICONS } from './icons';
 
 export class FolderTreeUI {
   private container: HTMLElement;
@@ -47,10 +48,10 @@ export class FolderTreeUI {
     const hasChildren = node.children && node.children.length > 0;
     const isExpanded = this.expandedPaths.has(node.path);
 
-    // Expand arrow
+    // Expand arrow (Lucide Chevron)
     const arrow = document.createElement('span');
     arrow.className = `tree-arrow ${hasChildren ? (isExpanded ? 'expanded' : 'collapsed') : 'leaf'}`;
-    arrow.innerHTML = hasChildren ? (isExpanded ? '⌄' : '›') : ' ';
+    arrow.innerHTML = hasChildren ? (isExpanded ? ICONS.chevronDown : ICONS.chevronRight) : '';
     arrow.addEventListener('click', (e) => {
       e.stopPropagation();
       if (!hasChildren) return;
@@ -63,10 +64,10 @@ export class FolderTreeUI {
     });
     row.appendChild(arrow);
 
-    // Folder icon
+    // Folder icon (Lucide Folder)
     const icon = document.createElement('span');
     icon.className = 'tree-icon';
-    icon.textContent = '📁';
+    icon.innerHTML = isExpanded ? ICONS.folderOpen : ICONS.folder;
     row.appendChild(icon);
 
     // Folder name

@@ -53,8 +53,8 @@
     background: rgba($bg-card-hover, 0.7);
 
     .btn-row-play {
-      border-color: rgba(255, 97, 54, 0.4);
-      color: $primary;
+      border-color: rgba(37, 99, 235, 0.45);
+      color: $primary-hover;
     }
 
     .drag-handle {
@@ -62,9 +62,9 @@
     }
   }
 
-  // Active / Playing Row (CodeRabbit Coral Glow)
+  // Active / Playing Row (Dark Blue Accent)
   &.playing {
-    background: rgba(255, 97, 54, 0.07);
+    background: rgba(37, 99, 235, 0.08);
     border-left: 3px solid $primary;
 
     .btn-row-play {
@@ -85,7 +85,7 @@
   }
 }
 
-// Play / Pause Circle Button
+// Play / Pause Circle Button with Lucide SVGs
 .btn-row-play {
   width: 28px;
   height: 28px;
@@ -97,6 +97,11 @@
   cursor: pointer;
   transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
   font-size: 10px;
+
+  svg {
+    width: 12px;
+    height: 12px;
+  }
 
   &:hover {
     border-color: $primary;
@@ -121,16 +126,18 @@
   width: 24px;
   height: 24px;
   border-radius: $radius-sm;
-  font-family: $font-mono;
-  font-size: 13px;
-  font-weight: 700;
   color: $foreground-dim;
   cursor: grab;
   transition: all 0.12s;
 
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+
   &:hover {
     background: rgba(255, 255, 255, 0.08);
-    color: $primary;
+    color: $primary-hover;
     transform: scale(1.1);
   }
 
@@ -173,9 +180,9 @@
   }
 
   &.flac {
-    background: rgba(255, 97, 54, 0.12);
+    background: rgba(96, 165, 250, 0.12);
     color: $format-flac;
-    border-color: rgba(255, 97, 54, 0.25);
+    border-color: rgba(96, 165, 250, 0.25);
   }
 
   &.aiff, &.aif {
@@ -206,9 +213,9 @@
   transition: all 0.15s;
 
   &:hover {
-    border-color: rgba(255, 97, 54, 0.4);
+    border-color: rgba(37, 99, 235, 0.45);
     background: rgba($bg-card, 0.8);
-    box-shadow: 0 0 10px rgba(255, 97, 54, 0.15);
+    box-shadow: 0 0 10px rgba(37, 99, 235, 0.2);
   }
 }
 
@@ -229,13 +236,17 @@
   border-radius: $radius-sm;
   @include flex-center;
   cursor: pointer;
-  font-size: 12px;
   transition: all 0.12s;
+
+  svg {
+    width: 13px;
+    height: 13px;
+  }
 
   &:hover {
     background: rgba(255, 255, 255, 0.06);
     border-color: $border-color;
-    color: $primary;
+    color: $primary-hover;
     transform: scale(1.08);
   }
 }
@@ -251,15 +262,19 @@
   gap: 12px;
 
   .empty-state-symbol {
-    width: 48px;
-    height: 48px;
+    width: 52px;
+    height: 52px;
     border-radius: $radius-lg;
-    background: rgba(255, 97, 54, 0.08);
-    border: 1px solid rgba(255, 97, 54, 0.2);
-    color: $primary;
-    font-size: 20px;
+    background: rgba(37, 99, 235, 0.1);
+    border: 1px solid rgba(37, 99, 235, 0.25);
+    color: $primary-hover;
     @include flex-center;
     margin-bottom: 4px;
+
+    svg {
+      width: 26px;
+      height: 26px;
+    }
   }
 
   h3 {

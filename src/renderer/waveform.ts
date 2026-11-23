@@ -199,11 +199,11 @@ export class WaveformEngine {
     const barGap = 2 * dpr;
     const barW = Math.max(2 * dpr, (w / count) - barGap);
 
-    // Active CodeRabbit coral-orange gradient
+    // Active Dark Royal Blue gradient
     const grad = aCtx.createLinearGradient(0, 0, 0, h);
-    grad.addColorStop(0, '#ffa066');
-    grad.addColorStop(0.5, '#ff6136');
-    grad.addColorStop(1, '#ea5025');
+    grad.addColorStop(0, '#60a5fa');
+    grad.addColorStop(0.5, '#2563eb');
+    grad.addColorStop(1, '#1d4ed8');
 
     // Draw baseline guideline
     iCtx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
@@ -283,7 +283,7 @@ export class WaveformEngine {
     ctx.save();
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 2 * dpr;
-    ctx.shadowColor = '#ff6136';
+    ctx.shadowColor = '#2563eb';
     ctx.shadowBlur = 8 * dpr;
     ctx.beginPath();
     ctx.moveTo(playheadX, 2);
@@ -291,7 +291,7 @@ export class WaveformEngine {
     ctx.stroke();
 
     // Playhead top dot
-    ctx.fillStyle = '#ff6136';
+    ctx.fillStyle = '#2563eb';
     ctx.beginPath();
     ctx.arc(playheadX, 5 * dpr, 4 * dpr, 0, Math.PI * 2);
     ctx.fill();
@@ -351,7 +351,7 @@ export class WaveformEngine {
       ctx.beginPath();
       ctx.roundRect(x, topY, barWidth, barHeight, 1.0 * dpr);
       ctx.fillStyle = isPast
-        ? (isPlaying ? '#ff6136' : '#ff744c')
+        ? (isPlaying ? '#2563eb' : '#3b82f6')
         : 'rgba(148, 163, 184, 0.25)';
       ctx.fill();
     }
