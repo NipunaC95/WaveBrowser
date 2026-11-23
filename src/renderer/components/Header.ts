@@ -1,3 +1,5 @@
+import { ICONS } from '../icons';
+
 export class HeaderComponent {
   private breadcrumbsEl: HTMLElement;
   private btnLoadDemo: HTMLButtonElement;
@@ -10,7 +12,6 @@ export class HeaderComponent {
   }
 
   setBreadcrumbs(path: string): void {
-    this.breadcrumbsEl.textContent = path || 'No folder selected';
+    this.breadcrumbsEl.innerHTML = `<span class="breadcrumb-icon">${ICONS.folder}</span><span>${path || 'No folder selected'}</span>`;
   }
 }
-
