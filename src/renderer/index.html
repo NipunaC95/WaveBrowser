@@ -1,25 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WaveBrowse — Audio Asset Manager</title>
+  <title>WaveBrowse — AI Audio Asset Manager</title>
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
   <div class="app-shell">
     <!-- Top Window Drag Bar -->
     <header class="top-titlebar">
       <div class="brand-title">
-        <span class="brand-name">WAVEBROWSE</span>
-        <span class="brand-badge">AUDIO ASSET MANAGER</span>
+        <div class="brand-icon-wrapper" title="WaveBrowse — CodeRabbit Styled AI Audio Asset Manager">
+          <!-- Geometric CodeRabbit-inspired rabbit ear / sound wave SVG -->
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M7.5 4.5C7.5 2.5 9 1 10.5 1C12 1 12.5 2.5 12 5.5L10.5 11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M16.5 4.5C16.5 2.5 15 1 13.5 1C12 1 11.5 2.5 12 5.5L13.5 11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M4 14C4 9.5 7.5 7.5 12 7.5C16.5 7.5 20 9.5 20 14C20 18.5 16.5 21 12 21C7.5 21 4 18.5 4 14Z" stroke="currentColor" stroke-width="2"/>
+            <circle cx="9" cy="14" r="1.5" fill="currentColor"/>
+            <circle cx="15" cy="14" r="1.5" fill="currentColor"/>
+            <path d="M12 16.5L12 17.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <span class="brand-name">WaveBrowse</span>
+        <span class="brand-badge"><span class="pulse-dot"></span>AI ENGINE</span>
       </div>
+
       <div class="keyboard-hints">
-        <span><span class="kbd">SPACE</span> PLAY</span>
-        <span><span class="kbd">↑/↓</span> AUDITION</span>
-        <span><span class="kbd">L</span> LOOP</span>
-        <span><span class="kbd">ESC</span> STOP</span>
+        <span><span class="kbd">SPACE</span> Play</span>
+        <span><span class="kbd">↑/↓</span> Audition</span>
+        <span><span class="kbd">L</span> Loop</span>
+        <span><span class="kbd">ESC</span> Stop</span>
       </div>
+
       <div class="titlebar-actions">
         <button id="btnLoadDemo" class="btn-demo">LOAD SAMPLES</button>
       </div>
@@ -50,8 +65,8 @@
         <!-- Filter and Search Toolbar -->
         <section class="filter-bar">
           <div class="search-box">
-            <span class="search-icon">/</span>
-            <input type="text" id="searchInput" class="search-input" placeholder="SEARCH ASSETS...">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput" class="search-input" placeholder="Search audio assets, bpm, tags...">
           </div>
 
           <div class="format-chips" id="formatFilters">
@@ -101,7 +116,7 @@
           </table>
 
           <div id="emptyState" class="empty-state">
-            <div class="empty-state-symbol">✕</div>
+            <div class="empty-state-symbol">🐰</div>
             <h3>NO AUDIO ASSETS FOUND</h3>
             <p>Select a folder or drag an audio directory from Finder to index and preview waveforms.</p>
           </div>
@@ -116,7 +131,7 @@
 
           <!-- Master WebGL Waveform Canvas -->
           <div class="player-waveform-center">
-            <canvas id="masterWaveformCanvas" class="master-waveform-canvas" width="800" height="48"></canvas>
+            <canvas id="masterWaveformCanvas" class="master-waveform-canvas" width="800" height="50"></canvas>
             <div class="player-time-row">
               <span id="timeCurrent">0:00.0</span>
               <span id="timeDuration">0:00.0</span>
@@ -143,8 +158,9 @@
               <input type="range" id="volumeSlider" class="volume-slider" min="0" max="1" step="0.05" value="0.85">
             </div>
 
-            <!-- xAI High-Contrast DAW Drag Chip -->
-            <div id="masterDragChip" class="daw-drag-chip" draggable="true" title="Drag audio asset into Ableton, FL Studio, Logic, Reaper, Premiere, or Finder">
+            <!-- CodeRabbit Glowing DAW Launchpad Chip -->
+            <div id="masterDragChip" class="daw-drag-chip" draggable="true"
+              title="Drag audio asset into Ableton, FL Studio, Logic, Reaper, Premiere, or Finder">
               <span class="grip-icon">::</span>
               <span>DRAG TO DAW</span>
             </div>
@@ -156,4 +172,5 @@
 
   <script src="app.js"></script>
 </body>
+
 </html>

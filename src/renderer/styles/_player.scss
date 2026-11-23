@@ -6,42 +6,42 @@
   bottom: 0;
   left: 0;
   right: 0;
-  height: 100px;
-  background: rgba(8, 8, 8, 0.94);
+  height: 104px;
+  background: rgba($bg-card, 0.88);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border-top: 1px solid $border-subtle;
-  box-shadow: 0 -12px 32px rgba(0, 0, 0, 0.7);
+  border-top: 1px solid rgba(255, 97, 54, 0.2);
+  box-shadow: 0 -12px 36px rgba(0, 0, 0, 0.65), 0 -1px 0 rgba(255, 97, 54, 0.15);
   display: flex;
   align-items: center;
-  padding: 0 24px;
-  gap: 24px;
+  padding: 0 28px;
+  gap: 28px;
   z-index: 50;
   will-change: transform;
   transform: translateZ(0);
 }
 
 .player-info {
-  width: 220px;
+  width: 230px;
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
 .player-title {
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 600;
   @include text-truncate;
-  color: $text-pure;
-  letter-spacing: 0.02em;
+  color: $foreground;
+  letter-spacing: -0.01em;
 }
 
 .player-meta {
   font-family: $font-mono;
-  font-size: 10px;
-  color: $text-muted;
+  font-size: 10.5px;
+  color: $foreground-dim;
   @include text-truncate;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
 }
 
 .player-waveform-center {
@@ -55,22 +55,27 @@
 
 .master-waveform-canvas {
   width: 100%;
-  height: 48px;
-  border-radius: $radius-xs;
-  background: rgba(255, 255, 255, 0.015);
-  border: 1px solid rgba(255, 255, 255, 0.03);
+  height: 50px;
+  border-radius: $radius-md;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   cursor: pointer;
   display: block;
+  transition: border-color 0.15s;
+
+  &:hover {
+    border-color: rgba(255, 97, 54, 0.35);
+  }
 }
 
 .player-time-row {
   display: flex;
   justify-content: space-between;
   font-family: $font-mono;
-  font-size: 10px;
-  letter-spacing: 0.06em;
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
   font-variant-numeric: tabular-nums;
-  color: $text-dim;
+  color: $foreground-dim;
 }
 
 .player-controls {
@@ -79,118 +84,168 @@
   gap: 12px;
 }
 
+// Transport Buttons (shadcn/ui icon buttons)
 .btn-transport {
-  background: transparent;
-  border: 1px solid $border-medium;
-  color: $text-primary;
-  width: 34px;
-  height: 34px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid $border-color;
+  color: $foreground-muted;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   @include flex-center;
   font-size: 12px;
   cursor: pointer;
-  transition: all 0.12s ease-out;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 
   &:hover {
-    border-color: $border-white;
-    color: $text-pure;
-  }
-
-  &.primary {
-    width: 40px;
-    height: 40px;
-    background: #ffffff;
-    color: #000000;
-    font-size: 13px;
-    border: none;
-    box-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
-
-    &:hover {
-      background: #e4e4e7;
-      transform: scale(1.05);
-    }
+    border-color: rgba(255, 97, 54, 0.35);
+    color: #ffffff;
+    background: rgba(255, 97, 54, 0.1);
+    transform: scale(1.05);
   }
 
   &.active {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: $border-white;
-    color: $text-pure;
+    background: $primary-light;
+    border-color: $primary;
+    color: $primary;
+    box-shadow: 0 0 10px rgba(255, 97, 54, 0.3);
+  }
+
+  // CodeRabbit Signature Play / Pause Button
+  &.primary {
+    width: 44px;
+    height: 44px;
+    background: $primary-gradient;
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    font-size: 14px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4), 0 0 18px $primary-glow;
+
+    &:hover {
+      background: linear-gradient(135deg, $primary-hover 0%, #ffa26b 100%);
+      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.5), 0 0 24px rgba(255, 97, 54, 0.5);
+      transform: scale(1.08);
+    }
+
+    &:active {
+      transform: scale(0.96);
+    }
   }
 }
 
-.daw-drag-chip {
-  @include flex-center;
-  gap: 8px;
-  background: transparent;
-  border: 1px solid $border-strong;
-  padding: 8px 14px;
-  border-radius: $radius-xs;
-  color: $text-pure;
+// shadcn/ui Select Component for Playback Speed
+.speed-select {
+  background: rgba($bg-card, 0.9);
+  border: 1px solid $border-color;
+  color: $foreground-muted;
+  padding: 5px 8px;
+  border-radius: $radius-md;
   font-family: $font-mono;
-  font-size: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.12s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+
+  &:hover {
+    border-color: rgba(255, 97, 54, 0.35);
+    color: #ffffff;
+  }
+
+  &:focus {
+    border-color: $primary;
+    box-shadow: 0 0 0 2px rgba(255, 97, 54, 0.25);
+  }
+
+  option {
+    background: $bg-card;
+    color: $foreground;
+  }
+}
+
+// Volume Slider with CodeRabbit Accent
+.volume-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .vol-label {
+    font-family: $font-mono;
+    font-size: 10px;
+    font-weight: 600;
+    color: $foreground-dim;
+  }
+
+  .volume-slider {
+    width: 72px;
+    height: 4px;
+    appearance: none;
+    -webkit-appearance: none;
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 9999px;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.15s;
+
+    &::-webkit-slider-thumb {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 2px solid $primary;
+      box-shadow: 0 0 8px $primary-glow;
+      cursor: pointer;
+      transition: transform 0.12s;
+
+      &:hover {
+        transform: scale(1.2);
+      }
+    }
+  }
+}
+
+// CodeRabbit Glowing DAW Launchpad Chip
+.daw-drag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: $primary-gradient-subtle;
+  border: 1px solid rgba(255, 97, 54, 0.35);
+  color: #ffffff;
+  padding: 8px 14px;
+  border-radius: $radius-lg;
+  font-family: $font-sans;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.04em;
   cursor: grab;
-  transition: all 0.15s ease-out;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 0 14px rgba(255, 97, 54, 0.18);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 
   .grip-icon {
-    color: $text-muted;
-    font-size: 11px;
-    letter-spacing: -0.1em;
+    font-family: $font-mono;
+    font-size: 13px;
+    color: $primary;
   }
 
   &:hover {
-    background: #ffffff;
-    color: #000000;
-    border-color: #ffffff;
+    background: $primary-gradient;
+    border-color: transparent;
+    color: #ffffff;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4), 0 0 22px rgba(255, 97, 54, 0.45);
+    transform: translateY(-1px);
 
     .grip-icon {
-      color: #000000;
+      color: #ffffff;
     }
   }
 
   &:active {
     cursor: grabbing;
-  }
-}
-
-.volume-control {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-
-  .vol-label {
-    font-family: $font-mono;
-    font-size: 9px;
-    letter-spacing: 0.08em;
-    color: $text-dim;
-  }
-
-  .volume-slider {
-    width: 55px;
-    accent-color: #ffffff;
-    cursor: pointer;
-  }
-}
-
-.speed-select {
-  background: transparent;
-  border: 1px solid $border-medium;
-  color: $text-secondary;
-  border-radius: $radius-xs;
-  font-family: $font-mono;
-  font-size: 10px;
-  padding: 4px 6px;
-  outline: none;
-  cursor: pointer;
-
-  &:hover {
-    border-color: $border-white;
-    color: $text-pure;
-  }
-
-  option {
-    background: #111111;
-    color: #ffffff;
+    transform: translateY(0);
   }
 }

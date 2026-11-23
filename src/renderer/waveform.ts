@@ -199,11 +199,11 @@ export class WaveformEngine {
     const barGap = 2 * dpr;
     const barW = Math.max(2 * dpr, (w / count) - barGap);
 
-    // Active monochromatic / white gradient (x.ai style)
+    // Active CodeRabbit coral-orange gradient
     const grad = aCtx.createLinearGradient(0, 0, 0, h);
-    grad.addColorStop(0, '#ffffff');
-    grad.addColorStop(0.5, '#e2e8f0');
-    grad.addColorStop(1, '#94a3b8');
+    grad.addColorStop(0, '#ffa066');
+    grad.addColorStop(0.5, '#ff6136');
+    grad.addColorStop(1, '#ea5025');
 
     // Draw baseline guideline
     iCtx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
@@ -219,13 +219,13 @@ export class WaveformEngine {
       const barH = Math.max(4 * dpr, val * (h * 0.88));
       const y = centerY - barH / 2;
 
-      // Inactive Layer (dim graphite)
-      iCtx.fillStyle = 'rgba(255, 255, 255, 0.22)';
+      // Inactive Layer (deep slate-gray)
+      iCtx.fillStyle = 'rgba(148, 163, 184, 0.22)';
       iCtx.beginPath();
       iCtx.roundRect(x, y, barW, barH, 2 * dpr);
       iCtx.fill();
 
-      // Active Layer (white)
+      // Active Layer (CodeRabbit coral)
       aCtx.fillStyle = grad;
       aCtx.beginPath();
       aCtx.roundRect(x, y, barW, barH, 2 * dpr);
@@ -283,15 +283,15 @@ export class WaveformEngine {
     ctx.save();
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 2 * dpr;
-    ctx.shadowColor = '#ffffff';
-    ctx.shadowBlur = 6 * dpr;
+    ctx.shadowColor = '#ff6136';
+    ctx.shadowBlur = 8 * dpr;
     ctx.beginPath();
     ctx.moveTo(playheadX, 2);
     ctx.lineTo(playheadX, targetH - 2);
     ctx.stroke();
 
     // Playhead top dot
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = '#ff6136';
     ctx.beginPath();
     ctx.arc(playheadX, 5 * dpr, 4 * dpr, 0, Math.PI * 2);
     ctx.fill();
@@ -351,8 +351,8 @@ export class WaveformEngine {
       ctx.beginPath();
       ctx.roundRect(x, topY, barWidth, barHeight, 1.0 * dpr);
       ctx.fillStyle = isPast
-        ? '#ffffff'
-        : 'rgba(255, 255, 255, 0.22)';
+        ? (isPlaying ? '#ff6136' : '#ff744c')
+        : 'rgba(148, 163, 184, 0.25)';
       ctx.fill();
     }
   }

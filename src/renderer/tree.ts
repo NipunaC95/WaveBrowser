@@ -66,7 +66,7 @@ export class FolderTreeUI {
     // Folder icon
     const icon = document.createElement('span');
     icon.className = 'tree-icon';
-    icon.innerHTML = '/';
+    icon.textContent = '📁';
     row.appendChild(icon);
 
     // Folder name

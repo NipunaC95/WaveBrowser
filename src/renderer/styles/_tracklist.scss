@@ -7,10 +7,11 @@
   padding-bottom: 110px;
   contain: strict;
   transform: translateZ(0);
-  background-color: $bg-black;
+  background-color: $bg-app;
   @include custom-scrollbar;
 }
 
+// shadcn/ui Table
 .track-table {
   width: 100%;
   border-collapse: collapse;
@@ -19,69 +20,94 @@
   thead {
     position: sticky;
     top: 0;
-    background: $bg-black;
+    background: rgba($bg-app, 0.95);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     z-index: 10;
-    border-bottom: 1px solid $border-subtle;
+    border-bottom: 1px solid $border-color;
   }
 
   th {
-    padding: 9px 16px;
+    padding: 10px 16px;
     font-family: $font-mono;
-    font-size: 10px;
+    font-size: 10.5px;
     font-weight: 600;
-    letter-spacing: 0.1em;
-    color: $text-dim;
+    letter-spacing: 0.08em;
+    color: $foreground-dim;
   }
 
   td {
-    padding: 7px 16px;
+    padding: 8px 16px;
     font-size: 13px;
     vertical-align: middle;
   }
 }
 
 .track-row {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-  transition: background 0.12s ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.035);
+  transition: all 0.12s ease-out;
   cursor: pointer;
   contain: layout style;
 
   &:hover {
-    background: $bg-surface-hover;
-  }
-
-  &.playing {
-    background: rgba(255, 255, 255, 0.04);
-    border-left: 2px solid $border-white;
+    background: rgba($bg-card-hover, 0.7);
 
     .btn-row-play {
-      background: #ffffff;
-      color: #000000;
-      border-color: #ffffff;
+      border-color: rgba(255, 97, 54, 0.4);
+      color: $primary;
+    }
+
+    .drag-handle {
+      color: $foreground;
     }
   }
 
-  &.selected {
+  // Active / Playing Row (CodeRabbit Coral Glow)
+  &.playing {
+    background: rgba(255, 97, 54, 0.07);
+    border-left: 3px solid $primary;
+
+    .btn-row-play {
+      background: $primary-gradient;
+      color: #ffffff;
+      border-color: transparent;
+      box-shadow: 0 0 12px $primary-glow;
+    }
+
+    .track-title {
+      color: #ffffff;
+      font-weight: 600;
+    }
+  }
+
+  &.selected:not(.playing) {
     background: rgba(255, 255, 255, 0.03);
   }
 }
 
+// Play / Pause Circle Button
 .btn-row-play {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  border: 1px solid $border-medium;
-  background: transparent;
-  color: $text-primary;
+  border: 1px solid $border-color;
+  background: rgba($bg-card, 0.8);
+  color: $foreground-muted;
   @include flex-center;
   cursor: pointer;
-  transition: all 0.12s ease-out;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
   font-size: 10px;
 
   &:hover {
-    border-color: $border-white;
-    color: $text-pure;
-    transform: scale(1.05);
+    border-color: $primary;
+    color: #ffffff;
+    background: $primary;
+    box-shadow: 0 0 12px $primary-glow;
+    transform: scale(1.08);
+  }
+
+  &:active {
+    transform: scale(0.95);
   }
 }
 
@@ -94,17 +120,18 @@
   @include flex-center;
   width: 24px;
   height: 24px;
-  border-radius: $radius-xs;
+  border-radius: $radius-sm;
   font-family: $font-mono;
-  color: $text-dim;
+  font-size: 13px;
+  font-weight: 700;
+  color: $foreground-dim;
   cursor: grab;
-  font-size: 12px;
-  letter-spacing: -0.05em;
-  transition: all 0.12s ease;
+  transition: all 0.12s;
 
   &:hover {
-    color: $text-pure;
     background: rgba(255, 255, 255, 0.08);
+    color: $primary;
+    transform: scale(1.1);
   }
 
   &:active {
@@ -114,101 +141,138 @@
 
 .track-title {
   font-weight: 500;
-  color: $text-primary;
+  color: $foreground;
   @include text-truncate;
-  max-width: 280px;
-  font-size: 13px;
-  letter-spacing: 0.01em;
+  max-width: 320px;
+  letter-spacing: -0.01em;
 }
 
+// shadcn/ui Badge for Format Tag
 .format-tag {
-  display: inline-block;
-  padding: 1px 5px;
-  border-radius: $radius-xs;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-family: $font-mono;
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  background: transparent;
-  border: 1px solid $border-subtle;
-  color: $text-muted;
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: $radius-full;
+  letter-spacing: 0.04em;
+  border: 1px solid transparent;
 
-  &.wav { color: #e4e4e7; border-color: rgba(255, 255, 255, 0.14); }
-  &.mp3 { color: #d4d4d8; }
-  &.flac { color: #f4f4f5; border-color: rgba(255, 255, 255, 0.2); }
-  &.aiff { color: #d4d4d8; }
+  &.wav {
+    background: rgba(56, 189, 248, 0.12);
+    color: $format-wav;
+    border-color: rgba(56, 189, 248, 0.25);
+  }
+
+  &.mp3 {
+    background: rgba(129, 140, 248, 0.12);
+    color: $format-mp3;
+    border-color: rgba(129, 140, 248, 0.25);
+  }
+
+  &.flac {
+    background: rgba(255, 97, 54, 0.12);
+    color: $format-flac;
+    border-color: rgba(255, 97, 54, 0.25);
+  }
+
+  &.aiff, &.aif {
+    background: rgba(251, 191, 36, 0.12);
+    color: $format-aiff;
+    border-color: rgba(251, 191, 36, 0.25);
+  }
+
+  &.ogg, &.opus {
+    background: rgba(52, 211, 153, 0.12);
+    color: $format-ogg;
+    border-color: rgba(52, 211, 153, 0.25);
+  }
 }
 
 .waveform-cell {
-  width: 220px;
+  padding: 4px 16px;
 }
 
 .mini-waveform-canvas {
   width: 200px;
-  height: 30px;
+  height: 32px;
+  border-radius: $radius-sm;
+  background: rgba($bg-card, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.04);
   display: block;
-  border-radius: $radius-xs;
   cursor: pointer;
-  background: rgba(255, 255, 255, 0.02);
-  transition: background 0.15s;
-  transform: translateZ(0);
+  transition: all 0.15s;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 97, 54, 0.4);
+    background: rgba($bg-card, 0.8);
+    box-shadow: 0 0 10px rgba(255, 97, 54, 0.15);
   }
 }
 
 .duration-cell {
   font-family: $font-mono;
   font-size: 11px;
-  color: $text-secondary;
+  color: $foreground-muted;
   font-variant-numeric: tabular-nums;
 }
 
+// Action button (Reveal in Finder)
 .btn-action-icon {
   background: transparent;
   border: 1px solid transparent;
-  color: $text-dim;
-  font-family: $font-mono;
-  font-size: 12px;
-  padding: 3px 6px;
-  border-radius: $radius-xs;
+  color: $foreground-dim;
+  width: 26px;
+  height: 26px;
+  border-radius: $radius-sm;
+  @include flex-center;
   cursor: pointer;
-  transition: color 0.12s, border-color 0.12s;
+  font-size: 12px;
+  transition: all 0.12s;
 
   &:hover {
-    color: $text-pure;
-    border-color: $border-medium;
+    background: rgba(255, 255, 255, 0.06);
+    border-color: $border-color;
+    color: $primary;
+    transform: scale(1.08);
   }
 }
 
+// shadcn/ui Empty State
 .empty-state {
-  display: flex;
+  display: none;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 350px;
-  color: $text-dim;
-  gap: 12px;
+  padding: 80px 24px;
   text-align: center;
-  padding: 20px;
+  gap: 12px;
 
   .empty-state-symbol {
-    font-size: 32px;
-    font-weight: 200;
-    color: $text-dim;
+    width: 48px;
+    height: 48px;
+    border-radius: $radius-lg;
+    background: rgba(255, 97, 54, 0.08);
+    border: 1px solid rgba(255, 97, 54, 0.2);
+    color: $primary;
+    font-size: 20px;
+    @include flex-center;
+    margin-bottom: 4px;
   }
 
   h3 {
-    font-family: $font-mono;
-    font-size: 12px;
-    letter-spacing: 0.1em;
-    color: $text-secondary;
+    font-size: 14px;
+    font-weight: 600;
+    color: $foreground;
+    letter-spacing: -0.01em;
   }
 
   p {
-    font-size: 12px;
-    color: $text-muted;
-    max-width: 320px;
+    font-size: 12.5px;
+    color: $foreground-dim;
+    max-width: 380px;
+    line-height: 1.5;
   }
 }

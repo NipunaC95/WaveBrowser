@@ -86,17 +86,19 @@ export class WebGLWaveformRenderer {
         // Render peak bar
         if (distFromCenter <= peak) {
           if (v_uv.x <= u_progress) {
-            // Played: xAI Pure Brilliant White & Silver
-            float sheen = 0.92 + 0.08 * (1.0 - distFromCenter / peak);
-            gl_FragColor = vec4(vec3(sheen), 1.0);
+            // Played: CodeRabbit Vibrant Coral & Warm Amber Gradient
+            vec3 colorBottom = vec3(1.0, 0.38, 0.21); // #FF6136 CodeRabbit Coral
+            vec3 colorTop = vec3(1.0, 0.65, 0.40);    // #FFA666 Warm Amber
+            vec3 barColor = mix(colorBottom, colorTop, 1.0 - (distFromCenter / peak));
+            gl_FragColor = vec4(barColor, 1.0);
           } else {
-            // Unplayed: Architectural Dark Gray
-            gl_FragColor = vec4(0.38, 0.38, 0.40, 0.35);
+            // Unplayed: Deep Architectural Slate-Blue
+            gl_FragColor = vec4(0.24, 0.28, 0.40, 0.45);
           }
           return;
         }
 
-        // Razor-sharp 1px pure white playhead line
+        // Razor-sharp playhead line with CodeRabbit Coral Glow
         float pixelX = v_uv.x * u_resolution.x;
         float playheadPixelX = u_progress * u_resolution.x;
         float distToPlayhead = abs(pixelX - playheadPixelX);
@@ -104,9 +106,9 @@ export class WebGLWaveformRenderer {
         if (distToPlayhead < 1.2) {
           gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
           return;
-        } else if (distToPlayhead < 3.5) {
-          float glow = (1.0 - distToPlayhead / 3.5) * 0.35;
-          gl_FragColor = vec4(1.0, 1.0, 1.0, glow);
+        } else if (distToPlayhead < 4.5) {
+          float glow = (1.0 - distToPlayhead / 4.5) * 0.6;
+          gl_FragColor = vec4(1.0, 0.42, 0.25, glow);
           return;
         }
 

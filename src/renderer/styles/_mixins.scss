@@ -6,73 +6,132 @@
   justify-content: center;
 }
 
-@mixin glassmorphism($blur: 20px) {
-  background: rgba($bg-surface, 0.92);
-  backdrop-filter: blur($blur);
-  -webkit-backdrop-filter: blur($blur);
-}
-
 @mixin text-truncate {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-@mixin xai-button {
-  background: transparent;
-  border: 1px solid $border-medium;
-  color: $text-primary;
-  border-radius: $radius-sm;
+@mixin glassmorphism($blur: 20px, $bg: rgba($bg-card, 0.85)) {
+  background: $bg;
+  backdrop-filter: blur($blur);
+  -webkit-backdrop-filter: blur($blur);
+  border: 1px solid $border-color;
+}
+
+// shadcn/ui Button Primitive: Default Primary (CodeRabbit Coral Gradient)
+@mixin btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: $primary-gradient;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: $radius-md;
+  font-family: $font-sans;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 8px 16px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 0 16px rgba(255, 97, 54, 0.25);
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &:hover {
+    background: linear-gradient(135deg, $primary-hover 0%, #ffa26b 100%);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), 0 0 22px rgba(255, 97, 54, 0.4);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    background: $primary-active;
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+}
+
+// shadcn/ui Button Primitive: Outline
+@mixin btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: $bg-card;
+  color: $foreground;
+  border: 1px solid $border-color;
+  border-radius: $radius-md;
   font-family: $font-sans;
   font-size: 12px;
   font-weight: 500;
-  letter-spacing: 0.04em;
+  padding: 6px 12px;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: all 0.15s ease-out;
+
+  &:hover {
+    background: $bg-card-hover;
+    border-color: $border-hover;
+    color: #ffffff;
+  }
+
+  &:active {
+    background: $bg-surface-elevated;
+    transform: scale(0.99);
+  }
+}
+
+// shadcn/ui Button Primitive: Ghost
+@mixin btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: transparent;
+  color: $foreground-muted;
+  border: 1px solid transparent;
+  border-radius: $radius-md;
+  font-family: $font-sans;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 10px;
   cursor: pointer;
   transition: all 0.15s ease-out;
 
   &:hover {
-    border-color: $border-strong;
-    color: $text-pure;
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(255, 255, 255, 0.05);
+    color: $foreground;
   }
 
   &:active {
-    transform: scale(0.98);
+    background: rgba(255, 255, 255, 0.08);
   }
 }
 
-@mixin xai-button-primary {
-  background: #ffffff;
-  color: #000000;
-  border: 1px solid #ffffff;
-  border-radius: $radius-sm;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s ease-out;
-
-  &:hover {
-    background: #e4e4e7;
-    border-color: #e4e4e7;
-  }
-
-  &:active {
-    transform: scale(0.98);
-  }
+// shadcn/ui Card Container
+@mixin card-surface {
+  background: $bg-card;
+  border: 1px solid $border-color;
+  border-radius: $radius-lg;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
 }
 
+// Smooth Custom Scrollbar
 @mixin custom-scrollbar {
   &::-webkit-scrollbar {
-    width: 5px;
-    height: 5px;
+    width: 6px;
+    height: 6px;
   }
   &::-webkit-scrollbar-track {
     background: transparent;
   }
   &::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.12);
-    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 9999px;
+    transition: background 0.15s;
+
     &:hover {
-      background: rgba(255, 255, 255, 0.25);
+      background: rgba(255, 97, 54, 0.4);
     }
   }
 }
