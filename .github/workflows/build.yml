@@ -8,16 +8,159 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Custom Release Tag (e.g. v1.0.1). Leave empty to use package.json version.'
+        description: 'Custom Release Tag (e.g. v1.0.1). Leave empty to auto-increment from latest release.'
         required: false
         default: ''
 
 permissions:
   contents: write
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
+  prepare:
+    name: Compute Incremental Release Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.calc.outputs.version }}
+      tag_name: ${{ steps.calc.outputs.tag_name }}
+      release_title: ${{ steps.calc.outputs.release_title }}
+
+    steps:
+      - name: Checkout repository with tags
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Determine next incremental version
+        id: calc
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REF: ${{ github.ref }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_API_URL: ${{ github.api_url }}
+          INPUT_TAG: ${{ github.event.inputs.release_tag }}
+        run: |
+          git fetch --tags --force
+          node - <<'EOF'
+          const fs = require('node:fs');
+          const { execSync } = require('node:child_process');
+
+          const ref = process.env.GITHUB_REF || '';
+          const inputTag = (process.env.INPUT_TAG || '').trim();
+
+          const parseSemver = (str) => {
+            const m = String(str).trim().match(/^v?(\d+)\.(\d+)\.(\d+)$/);
+            if (!m) return null;
+            return [Number(m[1]), Number(m[2]), Number(m[3])];
+          };
+
+          const cmpSemver = (a, b) => {
+            for (let i = 0; i < 3; i++) {
+              if (a[i] !== b[i]) return a[i] - b[i];
+            }
+            return 0;
+          };
+
+          const fmtSemver = (v) => `${v[0]}.${v[1]}.${v[2]}`;
+
+          async function run() {
+            let tag = '';
+            let version = '';
+
+            if (ref.startsWith('refs/tags/v')) {
+              tag = ref.slice('refs/tags/'.length);
+              version = tag.replace(/^v/, '');
+            } else if (inputTag) {
+              tag = inputTag.startsWith('v') ? inputTag : `v${inputTag}`;
+              version = tag.replace(/^v/, '');
+            } else {
+              const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+              const baseSemver = parseSemver(pkg.version) || [1, 0, 0];
+
+              const existingTags = new Set();
+              const gitTagsRaw = execSync('git tag -l "v*"', { encoding: 'utf8' });
+              for (const line of gitTagsRaw.split(/\r?\n/)) {
+                const t = line.trim();
+                if (t) existingTags.add(t);
+              }
+
+              // Also query GitHub Releases API in case a release tag wasn't fetched
+              const token = process.env.GH_TOKEN;
+              const repo = process.env.GITHUB_REPOSITORY;
+              const apiUrl = process.env.GITHUB_API_URL || 'https://api.github.com';
+              if (token && repo) {
+                try {
+                  const res = await fetch(`${apiUrl}/repos/${repo}/releases?per_page=100`, {
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                      Accept: 'application/vnd.github+json',
+                      'User-Agent': 'wave-browser-release-workflow'
+                    }
+                  });
+                  if (res.ok) {
+                    const releases = await res.json();
+                    if (Array.isArray(releases)) {
+                      for (const rel of releases) {
+                        if (rel && typeof rel.tag_name === 'string') {
+                          existingTags.add(rel.tag_name.trim());
+                        }
+                      }
+                    }
+                  }
+                } catch (err) {
+                  console.warn('Warning: could not query GitHub releases API:', err.message);
+                }
+              }
+
+              let maxExisting = null;
+              for (const t of existingTags) {
+                const parsed = parseSemver(t);
+                if (parsed && (!maxExisting || cmpSemver(parsed, maxExisting) > 0)) {
+                  maxExisting = parsed;
+                }
+              }
+
+              let next = [...baseSemver];
+              if (maxExisting && cmpSemver(maxExisting, baseSemver) >= 0) {
+                next = [maxExisting[0], maxExisting[1], maxExisting[2] + 1];
+              }
+
+              while (existingTags.has(`v${fmtSemver(next)}`)) {
+                next[2] += 1;
+              }
+
+              version = fmtSemver(next);
+              tag = `v${version}`;
+            }
+
+            const title = `Wave Browser ${tag.startsWith('v') ? tag : `v${tag}`}`;
+            console.log(`Resolved release -> version=${version}, tag_name=${tag}, title=${title}`);
+
+            const outFile = process.env.GITHUB_OUTPUT;
+            if (outFile) {
+              fs.appendFileSync(outFile, `version=${version}\n`);
+              fs.appendFileSync(outFile, `tag_name=${tag}\n`);
+              fs.appendFileSync(outFile, `release_title=${title}\n`);
+            }
+          }
+
+          run().catch((err) => {
+            console.error(err);
+            process.exit(1);
+          });
+          EOF
+
   build:
     name: Build (${{ matrix.os }})
+    needs: prepare
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -60,6 +203,11 @@ jobs:
       - name: Build TypeScript & SCSS bundles
         run: pnpm run build
 
+      - name: Set incremental build version
+        env:
+          BUILD_VERSION: ${{ needs.prepare.outputs.version }}
+        run: node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('package.json','utf8')); p.version=process.env.BUILD_VERSION; fs.writeFileSync('package.json', JSON.stringify(p, null, 2)+'\n');"
+
       - name: Package with electron-builder
         run: pnpm exec electron-builder --publish never
         env:
@@ -80,14 +228,11 @@ jobs:
 
   publish:
     name: Publish to GitHub Releases
-    needs: build
+    needs: [prepare, build]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
       - name: Download all platform artifacts
         uses: actions/download-artifact@v4
         with:
@@ -104,7 +249,7 @@ jobs:
             -name "*.AppImage" -o \
             -name "*.deb" \
           \) -exec cp {} release-assets/ \;
-          
+
           # Generate SHA256 checksums
           cd release-assets
           sha256sum * > SHA256SUMS.txt 2>/dev/null || true
@@ -113,28 +258,11 @@ jobs:
           echo "Collected release files:"
           ls -lh release-assets/
 
-      - name: Determine Release Tag & Title
-        id: release_info
-        run: |
-          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            TAG="${GITHUB_REF#refs/tags/}"
-            TITLE="Wave Browser ${TAG}"
-          elif [[ -n "${{ github.event.inputs.release_tag }}" ]]; then
-            TAG="${{ github.event.inputs.release_tag }}"
-            TITLE="Wave Browser ${TAG}"
-          else
-            VERSION=$(node -p "require('./package.json').version")
-            TAG="v${VERSION}"
-            TITLE="Wave Browser v${VERSION}"
-          fi
-          echo "tag_name=${TAG}" >> $GITHUB_OUTPUT
-          echo "release_title=${TITLE}" >> $GITHUB_OUTPUT
-
-      - name: Publish or Update GitHub Release
+      - name: Publish GitHub Release (${{ needs.prepare.outputs.tag_name }})
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.release_info.outputs.tag_name }}
-          name: ${{ steps.release_info.outputs.release_title }}
+          tag_name: ${{ needs.prepare.outputs.tag_name }}
+          name: ${{ needs.prepare.outputs.release_title }}
           target_commitish: ${{ github.sha }}
           files: release-assets/*
           draft: false
