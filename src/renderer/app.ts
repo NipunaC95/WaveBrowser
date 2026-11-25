@@ -1,7 +1,7 @@
 import { AudioFileItem, AudioMetadata, FolderNode } from '../types';
 import { WaveformEngine } from './waveform';
 import { AudioPlayer } from './player';
-import { parseSearchQuery, matchesParsedSearch, scoreParsedSearch } from './search';
+import { parseSearchQuery, matchesParsedSearch, scoreParsedSearch, SearchIndex } from './search';
 import { HeaderComponent } from './components/Header';
 import { SidebarComponent } from './components/Sidebar';
 import { FilterBarComponent, FilterState } from './components/FilterBar';
@@ -27,6 +27,9 @@ export class WaveBrowserApp {
   private currentRootTree: FolderNode | null = null;
   private currentSelectedFolder: string | null = null;
   private libraryTracks: AudioFileItem[] = [];
+  private libraryIndexCache = new Map<string, SearchIndex>();
+  private currentSearchIndex: SearchIndex | null = null;
+  private activeLoadToken = 0;
   private allTracks: AudioFileItem[] = [];
   private filteredTracks: AudioFileItem[] = [];
   private currentTrackIndex = -1;
@@ -120,20 +123,85 @@ export class WaveBrowserApp {
   }
 
   async openFolder(folderPath: string): Promise<void> {
+    const loadToken = ++this.activeLoadToken;
     this.currentRootFolder = folderPath;
     this.currentSelectedFolder = folderPath;
     this.filterBar.clearSearch(true);
     this.header.setBreadcrumbs(folderPath);
     localStorage.setItem('wavebrowser_last_directory', folderPath);
 
-    const tree = await window.api.getFolderTree(folderPath);
-    this.currentRootTree = tree;
-    this.sidebar.setTree(tree, folderPath);
+    const normRoot = this.normalizeDir(folderPath);
+    const cachedIndex = this.libraryIndexCache.get(normRoot);
 
-    this.libraryTracks = await window.api.scanAudioFiles({
-      dirPath: folderPath,
-      recursive: true
-    });
+    if (cachedIndex) {
+      this.currentSearchIndex = cachedIndex;
+      this.libraryTracks = cachedIndex.getAllTracks();
+      const tree = await window.api.getFolderTree(folderPath);
+      if (loadToken !== this.activeLoadToken) return;
+      this.currentRootTree = tree;
+      this.sidebar.setTree(tree, folderPath);
+      this.allTracks = this.getFolderTracks(folderPath);
+      this.applyFilters();
+      return;
+    }
+
+    // First time loading this folder: show Indexing loading animation while scanning + building HashMap index
+    const startedAt = performance.now();
+    this.trackList.setIndexingState(true, 'Scanning audio directory...', 0.15);
+
+    try {
+      const [tree, scannedTracks] = await Promise.all([
+        window.api.getFolderTree(folderPath),
+        window.api.scanAudioFiles({
+          dirPath: folderPath,
+          recursive: true
+        })
+      ]);
+
+      if (loadToken !== this.activeLoadToken) return;
+
+      this.currentRootTree = tree;
+      this.sidebar.setTree(tree, folderPath);
+      this.libraryTracks = scannedTracks;
+
+      this.trackList.setIndexingState(
+        true,
+        `Indexing 0 / ${scannedTracks.length} assets...`,
+        0.3
+      );
+
+      const builtIndex = await SearchIndex.build(
+        scannedTracks,
+        (d) => this.normalizeDir(d),
+        (indexed, total) => {
+          if (loadToken !== this.activeLoadToken) return;
+          const ratio = total > 0 ? 0.3 + (indexed / total) * 0.7 : 1;
+          this.trackList.setIndexingState(
+            true,
+            `Indexing ${indexed} / ${total} assets...`,
+            ratio
+          );
+        },
+        () => loadToken !== this.activeLoadToken
+      );
+
+      if (!builtIndex || loadToken !== this.activeLoadToken) return;
+
+      // Ensure the indexing animation is cleanly visible even on small folders
+      const elapsed = performance.now() - startedAt;
+      if (elapsed < 260) {
+        await new Promise<void>((resolve) => window.setTimeout(resolve, 260 - elapsed));
+      }
+      if (loadToken !== this.activeLoadToken) return;
+
+      this.libraryIndexCache.set(normRoot, builtIndex);
+      this.currentSearchIndex = builtIndex;
+    } finally {
+      if (loadToken === this.activeLoadToken) {
+        this.trackList.setIndexingState(false);
+      }
+    }
+
     this.allTracks = this.getFolderTracks(folderPath);
     this.applyFilters();
   }
@@ -153,6 +221,13 @@ export class WaveBrowserApp {
 
   private getFolderTracks(folderPath: string): AudioFileItem[] {
     const recursive = this.filterBar.getState().recursive !== false;
+    if (this.currentSearchIndex) {
+      return this.currentSearchIndex.getFolderTracks(
+        folderPath,
+        recursive,
+        (d) => this.normalizeDir(d)
+      );
+    }
     const target = this.normalizeDir(folderPath);
     return this.libraryTracks.filter((track) => {
       const trackDir = this.normalizeDir(track.dir);
@@ -228,21 +303,31 @@ export class WaveBrowserApp {
             isGlobalSearch ? (this.currentRootFolder || 'Library') : undefined
           );
 
-            if (favoritesOnly) {
-              list = list.filter((t) => this.favorites.has(t.path));
-            }
-
-            if (formatFilter !== 'ALL') {
-              list = list.filter((t) => t.extension === formatFilter);
-            }
-
-              if (isGlobalSearch) {
-                const parsed = parseSearchQuery(searchQuery);
-                highlightTerms = parsed.highlightTerms;
+            if (isGlobalSearch) {
+              const parsed = parseSearchQuery(searchQuery);
+              highlightTerms = parsed.highlightTerms;
+              if (this.currentSearchIndex) {
+                list = this.currentSearchIndex.search(parsed, this.favorites, formatFilter, favoritesOnly);
+              } else {
+                if (favoritesOnly) {
+                  list = list.filter((t) => this.favorites.has(t.path));
+                }
+                if (formatFilter !== 'ALL') {
+                  list = list.filter((t) => t.extension === formatFilter);
+                }
                 list = list
                   .filter((t) => matchesParsedSearch(t, parsed, this.favorites.has(t.path)))
                   .sort((a, b) => scoreParsedSearch(b, parsed) - scoreParsedSearch(a, parsed));
               }
+            } else {
+              if (favoritesOnly) {
+                list = list.filter((t) => this.favorites.has(t.path));
+              }
+
+              if (formatFilter !== 'ALL') {
+                list = list.filter((t) => t.extension === formatFilter);
+              }
+            }
 
               this.filteredTracks = list;
               const playingPath = this.player.getCurrentTrack()?.path;
@@ -295,6 +380,7 @@ export class WaveBrowserApp {
           if (meta.bitsPerSample) track.bitsPerSample = meta.bitsPerSample;
           if (meta.numberOfChannels) track.numberOfChannels = meta.numberOfChannels;
           if (meta.bpm) track.bpm = meta.bpm;
+          this.currentSearchIndex?.refreshTrackMetadata(track.path);
         }
         if (this.player.getCurrentTrack()?.path === track.path) {
           this.masterPlayer.updateMetadata(meta);
@@ -426,6 +512,8 @@ export class WaveBrowserApp {
       track.path = newPath;
       track.dir = newDir;
     }
+
+    this.currentSearchIndex?.moveTrack(sourcePath, newPath, newDir, (d) => this.normalizeDir(d));
 
     if (this.favorites.has(sourcePath)) {
       this.favorites.delete(sourcePath);

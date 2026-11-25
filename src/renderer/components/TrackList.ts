@@ -15,6 +15,9 @@ export interface TrackListHandlers {
 export class TrackListComponent {
   private tbody: HTMLTableSectionElement;
   private emptyState: HTMLElement;
+  private indexingOverlay: HTMLElement;
+  private indexingDetail: HTMLElement;
+  private indexingProgressBar: HTMLElement;
   private waveformEngine: WaveformEngine;
   private handlers: TrackListHandlers;
 
@@ -23,6 +26,7 @@ export class TrackListComponent {
   private observer: IntersectionObserver | null = null;
   private activeTrackPath: string | null = null;
   private isCurrentlyPlaying = false;
+  private isIndexing = false;
 
   constructor(waveformEngine: WaveformEngine, handlers: TrackListHandlers) {
     this.waveformEngine = waveformEngine;
@@ -30,8 +34,24 @@ export class TrackListComponent {
 
     this.tbody = document.getElementById('trackListBody') as HTMLTableSectionElement;
     this.emptyState = document.getElementById('emptyState')!;
+    this.indexingOverlay = document.getElementById('indexingOverlay')!;
+    this.indexingDetail = document.getElementById('indexingDetail')!;
+    this.indexingProgressBar = document.getElementById('indexingProgressBar')!;
 
     this.initObserver();
+  }
+
+  setIndexingState(active: boolean, detail = 'Building search index...', progressRatio = 0.2): void {
+    this.isIndexing = active;
+    this.indexingOverlay.hidden = !active;
+    if (active) {
+      this.tbody.innerHTML = '';
+      this.miniCanvases.clear();
+      this.emptyState.style.display = 'none';
+      this.indexingDetail.textContent = detail;
+      const pct = Math.max(8, Math.min(100, Math.round(progressRatio * 100)));
+      this.indexingProgressBar.style.width = `${pct}%`;
+    }
   }
 
   private initObserver(): void {
@@ -63,7 +83,7 @@ export class TrackListComponent {
     this.miniCanvases.clear();
 
     if (tracks.length === 0) {
-      this.emptyState.style.display = 'flex';
+      this.emptyState.style.display = this.isIndexing ? 'none' : 'flex';
       return;
     }
     this.emptyState.style.display = 'none';
