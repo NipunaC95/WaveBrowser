@@ -1,7 +1,8 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import { ElectronApi, ScanOptions } from '../types';
 
 const api: ElectronApi = {
+  platform: process.platform,
   chooseFolder: () => ipcRenderer.invoke('dialog:chooseFolder'),
   getFolderTree: (dirPath: string) => ipcRenderer.invoke('fs:getFolderTree', dirPath),
   scanAudioFiles: (options: ScanOptions) => ipcRenderer.invoke('fs:scanAudioFiles', options),
@@ -11,9 +12,16 @@ const api: ElectronApi = {
   revealInFinder: (filePath: string) => ipcRenderer.invoke('shell:revealInFinder', filePath),
   openExternal: (filePath: string) => ipcRenderer.invoke('shell:openExternal', filePath),
   getDemoPath: () => ipcRenderer.invoke('app:getDemoPath'),
+  getPathForFile: (file: File) => {
+    try {
+      return webUtils.getPathForFile(file);
+    } catch {
+      return (file as unknown as { path?: string }).path || '';
+    }
+  },
   toMediaUrl: (filePath: string) => {
-    const cleanPath = filePath.startsWith('/') ? filePath : '/' + filePath;
-    return `media://${encodeURI(cleanPath)}`;
+    const fileName = filePath.split(/[/\\]/).pop() || 'audio';
+    return `media://local/${encodeURIComponent(fileName)}?path=${encodeURIComponent(filePath)}`;
   }
 };
 

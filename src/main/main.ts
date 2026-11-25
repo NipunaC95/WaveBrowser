@@ -33,21 +33,56 @@ function getSafeDragIcon(): Electron.NativeImage {
     return cachedDragIcon;
   }
 
-  const iconPath = path.join(__dirname, '..', 'assets', 'drag-icon.png');
-  if (fs.existsSync(iconPath)) {
-    try {
-      const img = nativeImage.createFromPath(iconPath);
-      if (!img.isEmpty()) {
-        cachedDragIcon = img;
-        return cachedDragIcon;
+  const candidatePaths = [
+    path.join(__dirname, '..', 'assets', 'drag-icon.png'),
+    ...(app.isPackaged ? [path.join(process.resourcesPath, 'assets', 'drag-icon.png')] : [])
+  ];
+
+  for (const iconPath of candidatePaths) {
+    if (fs.existsSync(iconPath)) {
+      try {
+        const img = nativeImage.createFromPath(iconPath);
+        if (!img.isEmpty()) {
+          cachedDragIcon = img;
+          return cachedDragIcon;
+        }
+      } catch {
+        // Fallback below
       }
-    } catch {
-      // Fallback below
     }
   }
 
   cachedDragIcon = nativeImage.createFromDataURL(DEFAULT_DRAG_ICON_DATA_URL);
   return cachedDragIcon;
+}
+
+function parseMediaUrlPath(requestUrl: string): string {
+  try {
+    const parsed = new URL(requestUrl);
+    const paramPath = parsed.searchParams.get('path');
+    if (paramPath) {
+      return path.normalize(paramPath);
+    }
+    let decodedPath = decodeURIComponent(parsed.pathname);
+    if (process.platform === 'win32' && /^\/[a-zA-Z]:/.test(decodedPath)) {
+      decodedPath = decodedPath.slice(1);
+    }
+    return path.normalize(decodedPath);
+  } catch {
+    let fallbackPath = decodeURIComponent(requestUrl.replace(/^media:\/\/(\/)?/, '/'));
+    if (process.platform === 'win32' && /^\/[a-zA-Z]:/.test(fallbackPath)) {
+      fallbackPath = fallbackPath.slice(1);
+    }
+    return path.normalize(fallbackPath);
+  }
+}
+
+function toSafeWebStream(filePath: string, options?: { start?: number; end?: number }): ReadableStream {
+  const nodeStream = fs.createReadStream(filePath, options);
+  nodeStream.on('error', () => {
+    // Prevent unhandled 'error' event crashes if the stream is aborted mid-read
+  });
+  return Readable.toWeb(nodeStream) as ReadableStream;
 }
 
 function getMimeType(filePath: string): string {
@@ -70,14 +105,37 @@ function getMimeType(filePath: string): string {
 }
 
 function createWindow(): void {
+  const isMac = process.platform === 'darwin';
+  const isWin = process.platform === 'win32';
+  const windowIconPath = path.join(
+    __dirname,
+    '..',
+    'assets',
+    isWin ? 'icon.ico' : 'icon.png'
+  );
+
   mainWindow = new BrowserWindow({
     width: 1260,
     height: 840,
     minWidth: 920,
     minHeight: 620,
-    titleBarStyle: 'hiddenInset',
-    trafficLightPosition: { x: 18, y: 18 },
-    backgroundColor: '#000000',
+    ...(isMac
+      ? {
+          titleBarStyle: 'hiddenInset' as const,
+          trafficLightPosition: { x: 18, y: 18 }
+        }
+      : isWin
+        ? {
+            titleBarStyle: 'hidden' as const,
+            titleBarOverlay: {
+              color: '#101522',
+              symbolColor: '#f8fafc',
+              height: 52
+            }
+          }
+        : {}),
+    ...(fs.existsSync(windowIconPath) ? { icon: windowIconPath } : {}),
+    backgroundColor: '#0a0d14',
     title: 'WaveBrowse',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -98,14 +156,16 @@ app.whenReady().then(() => {
   // Enables smooth, instantaneous streaming and seeking for large and 1hr+ audio files
   protocol.handle('media', (request) => {
     try {
-      const urlPath = request.url.replace(/^media:\/\/(\/)?/, '/');
-      const decodedPath = decodeURIComponent(urlPath);
+      const decodedPath = parseMediaUrlPath(request.url);
 
-      if (!fs.existsSync(decodedPath)) {
+      if (!decodedPath || !fs.existsSync(decodedPath)) {
         return new Response('File not found', { status: 404 });
       }
 
       const stat = fs.statSync(decodedPath);
+      if (!stat.isFile()) {
+        return new Response('Not a file', { status: 404 });
+      }
       const fileSize = stat.size;
       const contentType = getMimeType(decodedPath);
 
@@ -140,8 +200,7 @@ app.whenReady().then(() => {
           }
 
           const chunkLength = end - start + 1;
-          const nodeStream = fs.createReadStream(decodedPath, { start, end });
-          const webStream = Readable.toWeb(nodeStream) as ReadableStream;
+          const webStream = toSafeWebStream(decodedPath, { start, end });
 
           return new Response(webStream, {
             status: 206,
@@ -157,8 +216,7 @@ app.whenReady().then(() => {
       }
 
       // Stream entire file with Accept-Ranges declared
-      const fullNodeStream = fs.createReadStream(decodedPath);
-      const fullWebStream = Readable.toWeb(fullNodeStream) as ReadableStream;
+      const fullWebStream = toSafeWebStream(decodedPath);
 
       return new Response(fullWebStream, {
         status: 200,
@@ -238,13 +296,15 @@ ipcMain.handle('fs:getMetadata', async (_event, filePath: string): Promise<Audio
   }
 });
 
-// IPC: Native drag and drop to ANY external software (DAWs, Finder, Premiere, etc.)
+// IPC: Native drag and drop to ANY external software (DAWs, Finder/Explorer, Premiere, etc.)
 ipcMain.on('start-drag', (event, filePath: string) => {
-  if (!filePath || !fs.existsSync(filePath)) return;
+  if (!filePath) return;
+  const normalizedPath = path.normalize(filePath);
+  if (!fs.existsSync(normalizedPath)) return;
   try {
     const icon = getSafeDragIcon();
     event.sender.startDrag({
-      file: filePath,
+      file: normalizedPath,
       icon
     });
   } catch (err) {
@@ -252,10 +312,12 @@ ipcMain.on('start-drag', (event, filePath: string) => {
   }
 });
 
-// IPC: Reveal in macOS Finder
+// IPC: Reveal in Finder / File Explorer
 ipcMain.handle('shell:revealInFinder', async (_event, filePath: string): Promise<boolean> => {
-  if (fs.existsSync(filePath)) {
-    shell.showItemInFolder(filePath);
+  if (!filePath) return false;
+  const normalizedPath = path.normalize(filePath);
+  if (fs.existsSync(normalizedPath)) {
+    shell.showItemInFolder(normalizedPath);
     return true;
   }
   return false;
@@ -263,15 +325,20 @@ ipcMain.handle('shell:revealInFinder', async (_event, filePath: string): Promise
 
 // IPC: Open with default OS audio application
 ipcMain.handle('shell:openExternal', async (_event, filePath: string): Promise<boolean> => {
-  if (fs.existsSync(filePath)) {
-    await shell.openPath(filePath);
+  if (!filePath) return false;
+  const normalizedPath = path.normalize(filePath);
+  if (fs.existsSync(normalizedPath)) {
+    await shell.openPath(normalizedPath);
     return true;
   }
   return false;
 });
 
-// IPC: Get demo samples path
+// IPC: Get demo samples path (supports both dev and packaged extraResources)
 ipcMain.handle('app:getDemoPath', async (): Promise<string | null> => {
-  const demoPath = path.join(__dirname, '..', 'demo-samples');
-  return fs.existsSync(demoPath) ? demoPath : null;
+  const candidates = [
+    ...(app.isPackaged ? [path.join(process.resourcesPath, 'demo-samples')] : []),
+    path.join(__dirname, '..', 'demo-samples')
+  ];
+  return candidates.find((p) => fs.existsSync(p)) ?? null;
 });

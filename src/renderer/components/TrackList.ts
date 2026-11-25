@@ -153,12 +153,16 @@ export class TrackListComponent {
       tdSize.style.color = 'var(--text-dim)';
       tr.appendChild(tdSize);
 
-      // 8. Actions (Finder)
+      // 8. Actions (Reveal in File Explorer / Finder)
       const tdActions = document.createElement('td');
       tdActions.style.textAlign = 'center';
       const btnFinder = document.createElement('button');
       btnFinder.className = 'btn-action-icon';
-      btnFinder.title = 'Reveal in Finder';
+      btnFinder.title = window.api.platform === 'win32'
+        ? 'Reveal in Explorer'
+        : window.api.platform === 'darwin'
+          ? 'Reveal in Finder'
+          : 'Show in File Manager';
       btnFinder.innerHTML = ICONS.externalLink;
       btnFinder.addEventListener('click', (e) => {
         e.stopPropagation();

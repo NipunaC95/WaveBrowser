@@ -45,6 +45,7 @@ export interface ScanOptions {
 }
 
 export interface ElectronApi {
+  platform: string;
   chooseFolder(): Promise<string | null>;
   getFolderTree(dirPath: string): Promise<FolderNode | null>;
   scanAudioFiles(options: ScanOptions): Promise<AudioFileItem[]>;
@@ -54,6 +55,7 @@ export interface ElectronApi {
   revealInFinder(filePath: string): Promise<boolean>;
   openExternal(filePath: string): Promise<boolean>;
   getDemoPath(): Promise<string | null>;
+  getPathForFile(file: File): string;
   toMediaUrl(filePath: string): string;
 }
 

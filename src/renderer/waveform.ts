@@ -83,6 +83,24 @@ export class WaveformEngine {
     return promise;
   }
 
+  private resolveFilePath(pathOrUrl: string): string {
+    if (!pathOrUrl.startsWith('media://')) {
+      return pathOrUrl;
+    }
+    try {
+      const parsed = new URL(pathOrUrl);
+      const paramPath = parsed.searchParams.get('path');
+      if (paramPath) return paramPath;
+      let decoded = decodeURIComponent(parsed.pathname);
+      if (/^\/[a-zA-Z]:/.test(decoded)) {
+        decoded = decoded.slice(1);
+      }
+      return decoded;
+    } catch {
+      return decodeURIComponent(pathOrUrl.replace(/^media:\/\/(\/)?/, '/'));
+    }
+  }
+
   private async processQueue(): Promise<void> {
     if (this.activeJobs >= this.maxConcurrent || this.queue.length === 0) {
       return;
@@ -92,9 +110,7 @@ export class WaveformEngine {
     const { pathOrUrl, bars, resolve } = this.queue.shift()!;
     const cacheKey = `${pathOrUrl}_${bars}`;
 
-    const filePath = pathOrUrl.startsWith('media://')
-      ? decodeURIComponent(pathOrUrl.replace(/^media:\/\/(\/)?/, '/'))
-      : pathOrUrl;
+    const filePath = this.resolveFilePath(pathOrUrl);
 
     try {
       // 1. FAST PATH: Direct disk peak extraction via Node.js Main process IPC

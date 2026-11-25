@@ -12,8 +12,8 @@
     "dist:win": "tsx build.ts && electron-builder --win",
     "dist:all": "tsx build.ts && electron-builder -mw",
     "dist:linux": "tsx build.ts && electron-builder --linux",
-    "start": "tsx build.ts && env -u ELECTRON_RUN_AS_NODE electron .",
-    "dev": "tsx build.ts && env -u ELECTRON_RUN_AS_NODE electron ."
+    "start": "tsx build.ts && node scripts/launch.mjs",
+    "dev": "tsx build.ts && node scripts/launch.mjs"
   },
   "keywords": [
     "audio",

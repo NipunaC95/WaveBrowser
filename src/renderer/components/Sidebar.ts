@@ -46,7 +46,7 @@ export class SidebarComponent {
 
       if (e.dataTransfer && e.dataTransfer.files.length > 0) {
         const file = e.dataTransfer.files[0];
-        const physicalPath = (file as unknown as { path: string }).path;
+        const physicalPath = window.api.getPathForFile(file);
         if (physicalPath) {
           onDropFolder(physicalPath);
         }

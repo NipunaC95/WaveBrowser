@@ -14,8 +14,11 @@ publish:
 files:
   - dist/**/*
   - assets/**/*
-  - demo-samples/**/*
   - package.json
+
+extraResources:
+  - from: demo-samples
+    to: demo-samples
 
 asar: true
 

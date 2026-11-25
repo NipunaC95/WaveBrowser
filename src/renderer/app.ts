@@ -26,6 +26,7 @@ export class WaveBrowseApp {
   private currentTrackIndex = -1;
 
   constructor() {
+    document.documentElement.classList.add(`platform-${window.api.platform}`);
     this.waveformEngine = new WaveformEngine();
     this.player = new AudioPlayer();
 
