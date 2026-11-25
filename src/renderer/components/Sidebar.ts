@@ -10,13 +10,14 @@ export class SidebarComponent {
   constructor(
     onSelectFolder: (path: string) => void,
     onChooseFolderClick: () => void,
-    onDropFolder: (path: string) => void
+    onDropFolder: (path: string) => void,
+    onDropFilesToFolder?: (filePaths: string[], targetFolderPath: string) => void
   ) {
     this.treeContainer = document.getElementById('treeContainer')!;
     this.btnOpenFolder = document.getElementById('btnOpenFolder') as HTMLButtonElement;
     this.folderDropZone = document.getElementById('folderDropZone')!;
 
-    this.folderTreeUI = new FolderTreeUI(this.treeContainer, onSelectFolder);
+    this.folderTreeUI = new FolderTreeUI(this.treeContainer, onSelectFolder, onDropFilesToFolder);
 
     this.btnOpenFolder.addEventListener('click', onChooseFolderClick);
     this.initDropZone(onDropFolder);

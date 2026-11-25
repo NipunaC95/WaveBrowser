@@ -4,12 +4,18 @@ import { ICONS } from './icons';
 export class FolderTreeUI {
   private container: HTMLElement;
   private onSelectFolder: (folderPath: string) => void;
+  private onDropFilesToFolder?: (filePaths: string[], targetFolderPath: string) => void;
   private selectedPath: string | null = null;
   private expandedPaths = new Set<string>();
 
-  constructor(container: HTMLElement, onSelectFolder: (folderPath: string) => void) {
+  constructor(
+    container: HTMLElement,
+    onSelectFolder: (folderPath: string) => void,
+    onDropFilesToFolder?: (filePaths: string[], targetFolderPath: string) => void
+  ) {
     this.container = container;
     this.onSelectFolder = onSelectFolder;
+    this.onDropFilesToFolder = onDropFilesToFolder;
   }
 
   render(rootNode: FolderNode | null, currentSelectedPath: string): void {
@@ -90,6 +96,45 @@ export class FolderTreeUI {
       this.selectedPath = node.path;
       this.highlightSelectedRow(row);
       this.onSelectFolder(node.path);
+    });
+
+    // Drop target -> move dragged audio files into this folder
+    row.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.dataTransfer) {
+        e.dataTransfer.dropEffect = 'move';
+      }
+      row.classList.add('drop-target');
+    });
+
+    row.addEventListener('dragleave', (e) => {
+      e.stopPropagation();
+      row.classList.remove('drop-target');
+    });
+
+    row.addEventListener('drop', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      row.classList.remove('drop-target');
+
+      if (!this.onDropFilesToFolder || !e.dataTransfer) return;
+
+      const droppedPaths: string[] = [];
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        for (let i = 0; i < e.dataTransfer.files.length; i++) {
+          const filePath = window.api.getPathForFile(e.dataTransfer.files[i]);
+          if (filePath) droppedPaths.push(filePath);
+        }
+      }
+      if (droppedPaths.length === 0) {
+        const customPath = e.dataTransfer.getData('application/x-wavebrowse-path');
+        if (customPath) droppedPaths.push(customPath);
+      }
+
+      if (droppedPaths.length > 0) {
+        this.onDropFilesToFolder(droppedPaths, node.path);
+      }
     });
 
     li.appendChild(row);

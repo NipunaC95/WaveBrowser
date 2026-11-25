@@ -44,6 +44,20 @@ export interface ScanOptions {
   recursive?: boolean;
 }
 
+export interface MoveFileResult {
+  ok: boolean;
+  newPath?: string;
+  newDir?: string;
+  error?: string;
+  conflict?: boolean;
+}
+
+export interface CreateFolderResult {
+  ok: boolean;
+  path?: string;
+  error?: string;
+}
+
 export interface ElectronApi {
   platform: string;
   chooseFolder(): Promise<string | null>;
@@ -51,6 +65,8 @@ export interface ElectronApi {
   scanAudioFiles(options: ScanOptions): Promise<AudioFileItem[]>;
   getMetadata(filePath: string): Promise<AudioMetadata | null>;
   getAudioPeaks(filePath: string, bars?: number): Promise<AudioPeaksData | null>;
+  moveFile(sourcePath: string, targetDir: string, rootDir?: string): Promise<MoveFileResult>;
+  createFolder(parentDir: string, folderName: string, rootDir?: string): Promise<CreateFolderResult>;
   startDrag(filePath: string): void;
   revealInFinder(filePath: string): Promise<boolean>;
   openExternal(filePath: string): Promise<boolean>;

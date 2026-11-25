@@ -278,14 +278,20 @@
   font-variant-numeric: tabular-nums;
 }
 
-// Action button (Reveal in Finder)
+// Action buttons (Move to Folder & Reveal in Explorer/Finder)
+.actions-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
 .btn-action-icon {
   background: transparent;
   border: 1px solid transparent;
   color: $foreground-dim;
   width: 26px;
   height: 26px;
-  margin: 0 auto;
   border-radius: $radius-sm;
   @include flex-center;
   cursor: pointer;

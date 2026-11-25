@@ -26,6 +26,7 @@
         <span><span class="kbd">SPACE</span> Play</span>
         <span><span class="kbd">↑/↓</span> Audition</span>
         <span><span class="kbd">F</span> Favorite</span>
+        <span><span class="kbd">M</span> Move</span>
         <span><span class="kbd">L</span> Loop</span>
         <span><span class="kbd">ESC</span> Stop</span>
       </div>
@@ -146,7 +147,7 @@
                 <th style="width: 228px;">WAVEFORM</th>
                 <th style="width: 96px;">DURATION</th>
                 <th style="width: 92px;">SIZE</th>
-                <th style="width: 64px; text-align: center;">LOCATE</th>
+                <th style="width: 82px; text-align: center;">ACTIONS</th>
               </tr>
             </thead>
             <tbody id="trackListBody">
@@ -244,6 +245,35 @@
       </main>
     </div>
   </div>
+
+  <!-- Move Asset Modal -->
+  <div id="moveModalBackdrop" class="move-modal-backdrop" hidden>
+    <div class="move-modal" role="dialog" aria-modal="true" aria-labelledby="moveModalTitle">
+      <div class="move-modal-header">
+        <div>
+          <h3 id="moveModalTitle">Move Audio Asset</h3>
+          <div id="moveModalTrackName" class="move-modal-track"></div>
+          <div id="moveModalSourceDir" class="move-modal-source"></div>
+        </div>
+        <button id="btnCloseMoveModal" class="btn-modal-close" title="Close (Esc)" aria-label="Close">×</button>
+      </div>
+      <div class="move-modal-body">
+        <input id="moveFolderSearch" type="text" class="move-modal-input" placeholder="Filter folders in library...">
+        <div id="moveFolderList" class="move-folder-list"></div>
+        <div class="move-new-folder-row">
+          <input id="moveNewFolderInput" type="text" class="move-modal-input" placeholder="New subfolder name...">
+          <button id="btnCreateSubfolder" type="button" class="btn-create-folder">+ NEW FOLDER</button>
+        </div>
+        <div id="moveModalError" class="move-modal-error" hidden></div>
+      </div>
+      <div class="move-modal-footer">
+        <button id="btnCancelMoveModal" type="button" class="btn-modal-cancel">Cancel</button>
+        <button id="btnConfirmMoveModal" type="button" class="btn-modal-confirm" disabled>Move File</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="appToast" class="app-toast" role="status" aria-live="polite"></div>
 
   <script src="app.js"></script>
 </body>

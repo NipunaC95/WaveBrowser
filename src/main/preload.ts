@@ -8,6 +8,10 @@ const api: ElectronApi = {
   scanAudioFiles: (options: ScanOptions) => ipcRenderer.invoke('fs:scanAudioFiles', options),
   getMetadata: (filePath: string) => ipcRenderer.invoke('fs:getMetadata', filePath),
   getAudioPeaks: (filePath: string, bars = 160) => ipcRenderer.invoke('fs:getAudioPeaks', filePath, bars),
+  moveFile: (sourcePath: string, targetDir: string, rootDir?: string) =>
+    ipcRenderer.invoke('fs:moveFile', sourcePath, targetDir, rootDir),
+  createFolder: (parentDir: string, folderName: string, rootDir?: string) =>
+    ipcRenderer.invoke('fs:createFolder', parentDir, folderName, rootDir),
   startDrag: (filePath: string) => ipcRenderer.send('start-drag', filePath),
   revealInFinder: (filePath: string) => ipcRenderer.invoke('shell:revealInFinder', filePath),
   openExternal: (filePath: string) => ipcRenderer.invoke('shell:openExternal', filePath),

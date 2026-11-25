@@ -201,4 +201,33 @@ export class AudioPlayer {
     this.dispatchCurrentTime();
     if (this.onPlayStateChange) this.onPlayStateChange(false, this.currentTrack);
   }
+
+  releaseIfMatching(filePath: string): { wasActive: boolean; wasPlaying: boolean; currentTime: number } {
+    if (!this.currentTrack || this.currentTrack.path !== filePath) {
+      return { wasActive: false, wasPlaying: false, currentTime: 0 };
+    }
+    const wasPlaying = this.isPlaying();
+    const currentTime = this.audio.currentTime || 0;
+    this.audio.pause();
+    this.stopAnimLoop();
+    this.audio.removeAttribute('src');
+    this.audio.load();
+    return { wasActive: true, wasPlaying, currentTime };
+  }
+
+  updateMovedTrack(updatedTrack: AudioFileItem, resumeTime = 0, shouldPlay = false): void {
+    this.currentTrack = updatedTrack;
+    this.audio.src = window.api.toMediaUrl(updatedTrack.path);
+    this.audio.playbackRate = this.playbackRate;
+    this.audio.loop = this.isLooping;
+    if (resumeTime > 0) {
+      this.pendingStartRatio = updatedTrack.duration && updatedTrack.duration > 0
+        ? Math.min(1, resumeTime / updatedTrack.duration)
+        : 0;
+    }
+    this.audio.load();
+    if (shouldPlay) {
+      this.audio.play().catch(console.warn);
+    }
+  }
 }

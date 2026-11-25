@@ -59,6 +59,17 @@ export class WaveformEngine {
   }
 
   // Enqueued peak extraction with IPC fast path and concurrency limit
+  renameCachedPath(oldPath: string, newPath: string): void {
+    const oldPrefix = `${oldPath}_`;
+    for (const [key, val] of Array.from(this.peaksCache.entries())) {
+      if (key.startsWith(oldPrefix)) {
+        const suffix = key.slice(oldPrefix.length);
+        this.peaksCache.delete(key);
+        this.peaksCache.set(`${newPath}_${suffix}`, val);
+      }
+    }
+  }
+
   getPeaks(pathOrUrl: string, bars = 60, priority = false): Promise<WaveformPeaks> {
     const cacheKey = `${pathOrUrl}_${bars}`;
     if (this.peaksCache.has(cacheKey)) {

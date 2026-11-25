@@ -5,7 +5,7 @@ import { Readable } from 'stream';
 import * as mm from 'music-metadata';
 import { getDirectoryTree, scanAudioFiles } from './scanner';
 import { extractAudioPeaks } from './peaks';
-import { AudioMetadata, ScanOptions } from '../types';
+import { AudioMetadata, CreateFolderResult, MoveFileResult, ScanOptions } from '../types';
 
 // Register custom media scheme for direct and range-capable audio streaming
 protocol.registerSchemesAsPrivileged([
@@ -342,3 +342,118 @@ ipcMain.handle('app:getDemoPath', async (): Promise<string | null> => {
   ];
   return candidates.find((p) => fs.existsSync(p)) ?? null;
 });
+
+function isPathWithinRoot(targetPath: string, rootPath: string): boolean {
+  const resolvedTarget = path.resolve(targetPath);
+  const resolvedRoot = path.resolve(rootPath);
+  const cmpTarget = process.platform === 'win32' ? resolvedTarget.toLowerCase() : resolvedTarget;
+  const cmpRoot = process.platform === 'win32' ? resolvedRoot.toLowerCase() : resolvedRoot;
+  return (
+    cmpTarget === cmpRoot ||
+    cmpTarget.startsWith(cmpRoot + path.sep)
+  );
+}
+
+async function moveFileWithRetry(src: string, dest: string): Promise<void> {
+  const maxAttempts = 4;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      fs.renameSync(src, dest);
+      return;
+    } catch (err) {
+      const code = (err as NodeJS.ErrnoException).code;
+      if (code === 'EXDEV') {
+        fs.copyFileSync(src, dest);
+        fs.unlinkSync(src);
+        return;
+      }
+      if ((code === 'EBUSY' || code === 'EPERM' || code === 'EACCES') && attempt < maxAttempts - 1) {
+        await new Promise((r) => setTimeout(r, 60 * (attempt + 1)));
+        continue;
+      }
+      throw err;
+    }
+  }
+}
+
+// IPC: Move an audio asset into another folder inside the sound library
+ipcMain.handle(
+  'fs:moveFile',
+  async (_event, sourcePath: string, targetDir: string, rootDir?: string): Promise<MoveFileResult> => {
+    try {
+      if (!sourcePath || !targetDir) {
+        return { ok: false, error: 'Missing source or destination path.' };
+      }
+
+      const resolvedSrc = path.resolve(sourcePath);
+      const resolvedTargetDir = path.resolve(targetDir);
+
+      if (!fs.existsSync(resolvedSrc) || !fs.statSync(resolvedSrc).isFile()) {
+        return { ok: false, error: 'Source audio file not found.' };
+      }
+      if (!fs.existsSync(resolvedTargetDir) || !fs.statSync(resolvedTargetDir).isDirectory()) {
+        return { ok: false, error: 'Destination folder not found.' };
+      }
+
+      if (rootDir) {
+        if (!isPathWithinRoot(resolvedSrc, rootDir) || !isPathWithinRoot(resolvedTargetDir, rootDir)) {
+          return { ok: false, error: 'Move destination must be inside the current sound library.' };
+        }
+      }
+
+      const currentDir = path.dirname(resolvedSrc);
+      const cmpCurrent = process.platform === 'win32' ? currentDir.toLowerCase() : currentDir;
+      const cmpTarget = process.platform === 'win32' ? resolvedTargetDir.toLowerCase() : resolvedTargetDir;
+      if (cmpCurrent === cmpTarget) {
+        return { ok: false, error: 'File is already in that folder.' };
+      }
+
+      const destPath = path.join(resolvedTargetDir, path.basename(resolvedSrc));
+      if (fs.existsSync(destPath)) {
+        return {
+          ok: false,
+          conflict: true,
+          error: `"${path.basename(resolvedSrc)}" already exists in ${path.basename(resolvedTargetDir)}.`
+        };
+      }
+
+      await moveFileWithRetry(resolvedSrc, destPath);
+      return { ok: true, newPath: destPath, newDir: resolvedTargetDir };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to move file.';
+      return { ok: false, error: message };
+    }
+  }
+);
+
+// IPC: Create a new subfolder inside the sound library
+ipcMain.handle(
+  'fs:createFolder',
+  async (_event, parentDir: string, folderName: string, rootDir?: string): Promise<CreateFolderResult> => {
+    try {
+      const trimmed = (folderName || '').trim();
+      if (!trimmed || trimmed === '.' || trimmed === '..' || /[<>:"/\\|?*\x00-\x1f]/.test(trimmed)) {
+        return { ok: false, error: 'Invalid folder name.' };
+      }
+
+      const resolvedParent = path.resolve(parentDir);
+      if (!fs.existsSync(resolvedParent) || !fs.statSync(resolvedParent).isDirectory()) {
+        return { ok: false, error: 'Parent directory not found.' };
+      }
+      if (rootDir && !isPathWithinRoot(resolvedParent, rootDir)) {
+        return { ok: false, error: 'Folder must be created inside the current sound library.' };
+      }
+
+      const newFolderPath = path.join(resolvedParent, trimmed);
+      if (fs.existsSync(newFolderPath)) {
+        return { ok: false, error: 'Folder already exists.' };
+      }
+
+      fs.mkdirSync(newFolderPath);
+      return { ok: true, path: newFolderPath };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to create folder.';
+      return { ok: false, error: message };
+    }
+  }
+);

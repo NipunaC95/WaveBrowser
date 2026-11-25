@@ -7,6 +7,7 @@ export interface TrackListHandlers {
   onPauseTrack: () => void;
   onSelectTrack: (index: number) => void;
   onToggleFavorite: (filePath: string) => boolean;
+  onMoveTrack: (track: AudioFileItem) => void;
   onStartDrag: (filePath: string) => void;
   onRevealFinder: (filePath: string) => void;
 }
@@ -186,9 +187,19 @@ export class TrackListComponent {
       tdSize.style.color = 'var(--text-dim)';
       tr.appendChild(tdSize);
 
-      // 8. Actions (Reveal in File Explorer / Finder)
+      // 8. Actions (Move to Folder & Reveal in File Explorer / Finder)
       const tdActions = document.createElement('td');
-      tdActions.style.textAlign = 'center';
+      tdActions.className = 'actions-cell';
+
+      const btnMove = document.createElement('button');
+      btnMove.className = 'btn-action-icon btn-row-move';
+      btnMove.title = 'Move to Folder (M)';
+      btnMove.innerHTML = ICONS.folderInput;
+      btnMove.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.handlers.onMoveTrack(track);
+      });
+
       const btnFinder = document.createElement('button');
       btnFinder.className = 'btn-action-icon';
       btnFinder.title = window.api.platform === 'win32'
@@ -201,6 +212,8 @@ export class TrackListComponent {
         e.stopPropagation();
         this.handlers.onRevealFinder(track.path);
       });
+
+      tdActions.appendChild(btnMove);
       tdActions.appendChild(btnFinder);
       tr.appendChild(tdActions);
 
