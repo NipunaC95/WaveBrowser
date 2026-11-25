@@ -24,9 +24,11 @@ export class WaveBrowseApp {
   private allTracks: AudioFileItem[] = [];
   private filteredTracks: AudioFileItem[] = [];
   private currentTrackIndex = -1;
+  private favorites = new Set<string>();
 
   constructor() {
     document.documentElement.classList.add(`platform-${window.api.platform}`);
+    this.loadFavorites();
     this.waveformEngine = new WaveformEngine();
     this.player = new AudioPlayer();
 
@@ -48,6 +50,7 @@ export class WaveBrowseApp {
         onPlayTrack: (index, ratio) => this.playIndex(index, ratio),
         onPauseTrack: () => this.player.pause(),
         onSelectTrack: (index) => this.selectIndex(index),
+        onToggleFavorite: (filePath) => this.toggleFavorite(filePath),
         onStartDrag: (filePath) => window.api.startDrag(filePath),
         onRevealFinder: (filePath) => window.api.revealInFinder(filePath)
       });
@@ -60,6 +63,7 @@ export class WaveBrowseApp {
           onSeek: (ratio) => this.seek(ratio),
           onVolumeChange: (vol) => this.player.setVolume(vol),
           onSpeedChange: (speed) => this.player.setPlaybackRate(speed),
+          onToggleFavorite: (filePath) => this.toggleFavorite(filePath),
           onStartDrag: (filePath) => window.api.startDrag(filePath)
         });
 
@@ -131,9 +135,63 @@ export class WaveBrowseApp {
     this.applyFilters();
   }
 
+  private loadFavorites(): void {
+    try {
+      const raw = localStorage.getItem('wavebrowse_favorites');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          this.favorites = new Set(parsed.filter((item): item is string => typeof item === 'string'));
+        }
+      }
+    } catch {
+      this.favorites = new Set();
+    }
+  }
+
+  private saveFavorites(): void {
+    try {
+      localStorage.setItem('wavebrowse_favorites', JSON.stringify(Array.from(this.favorites)));
+    } catch {
+      // Ignore storage quota errors
+    }
+  }
+
+  private toggleFavorite(filePath: string): boolean {
+    const isNowFavorite = !this.favorites.has(filePath);
+    if (isNowFavorite) {
+      this.favorites.add(filePath);
+    } else {
+      this.favorites.delete(filePath);
+    }
+    this.saveFavorites();
+    this.updateFavoritesCount();
+
+    if (this.player.getCurrentTrack()?.path === filePath) {
+      this.masterPlayer.setFavoriteState(isNowFavorite);
+    }
+
+    if (this.filterBar.getState().favoritesOnly) {
+      this.applyFilters();
+    } else {
+      this.trackList.setFavoriteState(filePath, isNowFavorite);
+    }
+
+    return isNowFavorite;
+  }
+
+  private updateFavoritesCount(): void {
+    const count = this.allTracks.filter((t) => this.favorites.has(t.path)).length;
+    this.filterBar.setFavoritesCount(count);
+  }
+
   private applyFilters(): void {
-          const { searchQuery, formatFilter, autoPlay } = this.filterBar.getState();
+          const { searchQuery, formatFilter, favoritesOnly, autoPlay } = this.filterBar.getState();
           let list = this.allTracks;
+
+            if (favoritesOnly) {
+              list = list.filter((t) => this.favorites.has(t.path));
+            }
 
             if (formatFilter !== 'ALL') {
               list = list.filter((t) => t.extension === formatFilter);
@@ -144,8 +202,16 @@ export class WaveBrowseApp {
               }
 
               this.filteredTracks = list;
+              const playingPath = this.player.getCurrentTrack()?.path;
+              this.currentTrackIndex = playingPath
+                ? list.findIndex((t) => t.path === playingPath)
+                : -1;
+              this.updateFavoritesCount();
               this.filterBar.setFileCount(list.length);
-              this.trackList.render(list, autoPlay);
+              this.trackList.render(list, autoPlay, this.favorites);
+              if (this.currentTrackIndex >= 0) {
+                this.trackList.highlightRow(this.currentTrackIndex);
+              }
             }
 
   async playIndex(index: number, startRatio = 0): Promise < void> {
@@ -157,7 +223,7 @@ export class WaveBrowseApp {
 
       // Instant pseudo-peaks on WebGL for 0ms response
       const instant = this.waveformEngine.generateInstantPeaks(track.name, track.sizeBytes, 160);
-      this.masterPlayer.setTrack(track, instant.peaks);
+      this.masterPlayer.setTrack(track, instant.peaks, this.favorites.has(track.path));
 
       // Start playback
       await this.player.playTrack(track, startRatio);
@@ -168,7 +234,7 @@ export class WaveBrowseApp {
           track.duration = real.duration;
         }
         if (this.player.getCurrentTrack()?.path === track.path) {
-          this.masterPlayer.setTrack(track, real.peaks);
+          this.masterPlayer.setTrack(track, real.peaks, this.favorites.has(track.path));
         }
       });
 
@@ -247,6 +313,11 @@ export class WaveBrowseApp {
           e.preventDefault();
           if (this.currentTrackIndex > 0) {
             this.playIndex(this.currentTrackIndex - 1);
+          }
+        } else if (e.code === 'KeyF') {
+          const targetTrack = this.player.getCurrentTrack() || this.filteredTracks[this.currentTrackIndex];
+          if (targetTrack) {
+            this.toggleFavorite(targetTrack.path);
           }
         } else if (e.code === 'KeyL') {
           this.player.toggleLoop();

@@ -101,6 +101,57 @@
   }
 }
 
+.btn-favorites-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  background: rgba($bg-card, 0.85);
+  border: 1px solid $border-color;
+  border-radius: $radius-lg;
+  color: $foreground-muted;
+  font-family: $font-mono;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+
+  svg {
+    width: 13px;
+    height: 13px;
+    color: #fbbf24;
+  }
+
+  .fav-count {
+    background: rgba(255, 255, 255, 0.08);
+    color: $foreground-muted;
+    padding: 1px 6px;
+    border-radius: $radius-full;
+    font-size: 10px;
+  }
+
+  &:hover {
+    color: #ffffff;
+    border-color: rgba(251, 191, 36, 0.45);
+    background: rgba(251, 191, 36, 0.08);
+  }
+
+  &.active {
+    background: rgba(251, 191, 36, 0.16);
+    border-color: rgba(251, 191, 36, 0.6);
+    color: #fde68a;
+    box-shadow: 0 0 14px rgba(251, 191, 36, 0.22);
+
+    .fav-count {
+      background: rgba(251, 191, 36, 0.25);
+      color: #fde68a;
+    }
+  }
+}
+
 .toggle-group {
   margin-left: auto;
   display: flex;

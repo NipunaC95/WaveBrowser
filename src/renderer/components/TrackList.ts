@@ -6,6 +6,7 @@ export interface TrackListHandlers {
   onPlayTrack: (index: number, seekRatio?: number) => void;
   onPauseTrack: () => void;
   onSelectTrack: (index: number) => void;
+  onToggleFavorite: (filePath: string) => boolean;
   onStartDrag: (filePath: string) => void;
   onRevealFinder: (filePath: string) => void;
 }
@@ -49,7 +50,7 @@ export class TrackListComponent {
     );
   }
 
-  render(tracks: AudioFileItem[], autoPlay: boolean): void {
+  render(tracks: AudioFileItem[], autoPlay: boolean, favorites: Set<string> = new Set()): void {
     this.currentTracks = tracks;
     this.tbody.innerHTML = '';
     this.miniCanvases.clear();
@@ -91,6 +92,22 @@ export class TrackListComponent {
       });
       tdPlay.appendChild(btnPlay);
       tr.appendChild(tdPlay);
+
+      // 1b. Favorite Star Button
+      const tdFav = document.createElement('td');
+      tdFav.style.textAlign = 'center';
+      const btnFav = document.createElement('button');
+      const isFav = favorites.has(track.path);
+      btnFav.className = `btn-row-fav${isFav ? ' active' : ''}`;
+      btnFav.title = isFav ? 'Remove from Favorites (F)' : 'Add to Favorites (F)';
+      btnFav.innerHTML = isFav ? ICONS.starFilled : ICONS.star;
+      btnFav.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const nextState = this.handlers.onToggleFavorite(track.path);
+        this.applyFavButtonState(btnFav, nextState);
+      });
+      tdFav.appendChild(btnFav);
+      tr.appendChild(tdFav);
 
       // 2. Dedicated Drag Handle
       const tdDrag = document.createElement('td');
@@ -241,6 +258,25 @@ export class TrackListComponent {
     if (entry && entry.peaks) {
       this.waveformEngine.drawMiniWaveform(entry.canvas, entry.peaks.peaks, ratio, isPlaying);
     }
+  }
+
+  setFavoriteState(filePath: string, isFavorite: boolean): void {
+    const rows = this.tbody.querySelectorAll('.track-row');
+    rows.forEach((row, i) => {
+      const track = this.currentTracks[i];
+      if (track && track.path === filePath) {
+        const favBtn = row.querySelector('.btn-row-fav') as HTMLButtonElement | null;
+        if (favBtn) {
+          this.applyFavButtonState(favBtn, isFavorite);
+        }
+      }
+    });
+  }
+
+  private applyFavButtonState(btn: HTMLButtonElement, isFavorite: boolean): void {
+    btn.classList.toggle('active', isFavorite);
+    btn.innerHTML = isFavorite ? ICONS.starFilled : ICONS.star;
+    btn.title = isFavorite ? 'Remove from Favorites (F)' : 'Add to Favorites (F)';
   }
 
   highlightRow(index: number): void {

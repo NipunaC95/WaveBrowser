@@ -9,6 +9,7 @@ export interface MasterPlayerHandlers {
   onSeek: (ratio: number) => void;
   onVolumeChange: (vol: number) => void;
   onSpeedChange: (speed: number) => void;
+  onToggleFavorite: (filePath: string) => void;
   onStartDrag: (filePath: string) => void;
 }
 
@@ -19,6 +20,7 @@ export class MasterPlayerComponent {
 
   private titleEl: HTMLElement;
   private metaEl: HTMLElement;
+  private btnMasterFavorite: HTMLButtonElement;
   private timeCurrentEl: HTMLElement;
   private timeDurationEl: HTMLElement;
   private btnPlayPause: HTMLButtonElement;
@@ -42,6 +44,7 @@ export class MasterPlayerComponent {
 
     this.titleEl = document.getElementById('masterTrackTitle')!;
     this.metaEl = document.getElementById('masterTrackMeta')!;
+    this.btnMasterFavorite = document.getElementById('btnMasterFavorite') as HTMLButtonElement;
     this.timeCurrentEl = document.getElementById('timeCurrent')!;
     this.timeDurationEl = document.getElementById('timeDuration')!;
     this.btnPlayPause = document.getElementById('btnPlayPause') as HTMLButtonElement;
@@ -54,14 +57,22 @@ export class MasterPlayerComponent {
     this.bindEvents();
   }
 
-  setTrack(track: AudioFileItem, peaks: Float32Array): void {
+  setTrack(track: AudioFileItem, peaks: Float32Array, isFavorite = false): void {
     this.currentTrack = track;
     this.titleEl.textContent = track.name;
     this.metaEl.textContent = `${track.extension} • ${track.sizeFormatted}`;
+    this.btnMasterFavorite.disabled = false;
+    this.setFavoriteState(isFavorite);
 
     // Upload peaks to GPU texture
     this.webglRenderer.setPeaks(peaks);
     this.renderWaveform(0);
+  }
+
+  setFavoriteState(isFavorite: boolean): void {
+    this.btnMasterFavorite.classList.toggle('active', isFavorite);
+    this.btnMasterFavorite.innerHTML = isFavorite ? ICONS.starFilled : ICONS.star;
+    this.btnMasterFavorite.title = isFavorite ? 'Remove from Favorites (F)' : 'Add to Favorites (F)';
   }
 
   updateMetadata(meta: AudioMetadata | null): void {
@@ -114,6 +125,13 @@ export class MasterPlayerComponent {
       this.isHovering = false;
       this.hoverRatio = -1;
       this.renderWaveform(this.lastProgress);
+    });
+
+    // Favorite toggle in Master Player
+    this.btnMasterFavorite.addEventListener('click', () => {
+      if (this.currentTrack) {
+        this.handlers.onToggleFavorite(this.currentTrack.path);
+      }
     });
 
     // Native Drag to DAW

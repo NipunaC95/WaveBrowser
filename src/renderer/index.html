@@ -25,6 +25,7 @@
       <div class="keyboard-hints">
         <span><span class="kbd">SPACE</span> Play</span>
         <span><span class="kbd">↑/↓</span> Audition</span>
+        <span><span class="kbd">F</span> Favorite</span>
         <span><span class="kbd">L</span> Loop</span>
         <span><span class="kbd">ESC</span> Stop</span>
       </div>
@@ -96,6 +97,14 @@
             <button class="chip" data-format="AIFF">AIFF</button>
           </div>
 
+          <button id="btnFilterFavorites" class="btn-favorites-filter" title="Show Favorites Only">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+            <span>FAVORITES</span>
+            <span id="favCountBadge" class="fav-count">0</span>
+          </button>
+
           <div class="toggle-group">
             <label class="switch-label" title="Audition immediately when selecting tracks">
               <input type="checkbox" id="chkAutoPlay" checked>
@@ -119,14 +128,15 @@
           <table class="track-table">
             <thead>
               <tr>
-                <th style="width: 44px; text-align: center;"></th>
-                <th style="width: 44px; text-align: center;" title="Drag file into any DAW, NLE, or Game Engine">DRAG</th>
+                <th style="width: 52px; text-align: center;"></th>
+                <th style="width: 42px; text-align: center;" title="Favorite (F)">★</th>
+                <th style="width: 52px; text-align: center;" title="Drag file into any DAW, NLE, or Game Engine">DRAG</th>
                 <th>ASSET NAME</th>
-                <th style="width: 70px;">FORMAT</th>
-                <th style="width: 220px;">WAVEFORM</th>
-                <th style="width: 80px;">DURATION</th>
-                <th style="width: 80px;">SIZE</th>
-                <th style="width: 50px; text-align: center;">LOCATE</th>
+                <th style="width: 82px;">FORMAT</th>
+                <th style="width: 228px;">WAVEFORM</th>
+                <th style="width: 96px;">DURATION</th>
+                <th style="width: 92px;">SIZE</th>
+                <th style="width: 64px; text-align: center;">LOCATE</th>
               </tr>
             </thead>
             <tbody id="trackListBody">
@@ -149,7 +159,14 @@
         <!-- Master Floating Player Dock -->
         <footer class="master-player-dock" id="masterPlayerDock">
           <div class="player-info">
-            <div id="masterTrackTitle" class="player-title">STANDBY</div>
+            <div class="player-title-row">
+              <div id="masterTrackTitle" class="player-title">STANDBY</div>
+              <button id="btnMasterFavorite" class="btn-master-fav" title="Toggle Favorite (F)" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                </svg>
+              </button>
+            </div>
             <div id="masterTrackMeta" class="player-meta">SELECT ASSET TO AUDITION</div>
           </div>
 

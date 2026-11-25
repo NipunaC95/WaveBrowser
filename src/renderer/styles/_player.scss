@@ -28,12 +28,55 @@
   gap: 4px;
 }
 
+.player-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
 .player-title {
+  flex: 1;
+  min-width: 0;
   font-size: 13.5px;
   font-weight: 600;
   @include text-truncate;
   color: $foreground;
   letter-spacing: -0.01em;
+}
+
+.btn-master-fav {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: $radius-sm;
+  border: 1px solid transparent;
+  background: transparent;
+  color: $foreground-dim;
+  @include flex-center;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  &:hover:not(:disabled) {
+    color: #fbbf24;
+    background: rgba(251, 191, 36, 0.12);
+    transform: scale(1.08);
+  }
+
+  &.active {
+    color: #fbbf24;
+    filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.45));
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
 }
 
 .player-meta {

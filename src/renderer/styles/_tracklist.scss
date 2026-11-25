@@ -14,6 +14,7 @@
 // shadcn/ui Table
 .track-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   text-align: left;
 
@@ -28,16 +29,17 @@
   }
 
   th {
-    padding: 10px 16px;
+    padding: 10px 12px;
     font-family: $font-mono;
     font-size: 10.5px;
     font-weight: 600;
     letter-spacing: 0.08em;
     color: $foreground-dim;
+    white-space: nowrap;
   }
 
   td {
-    padding: 8px 16px;
+    padding: 8px 12px;
     font-size: 13px;
     vertical-align: middle;
   }
@@ -45,7 +47,7 @@
 
 .track-row {
   border-bottom: 1px solid rgba(255, 255, 255, 0.035);
-  transition: all 0.12s ease-out;
+  transition: background-color 0.12s ease-out;
   cursor: pointer;
   contain: layout style;
 
@@ -62,10 +64,13 @@
     }
   }
 
-  // Active / Playing Row (Dark Blue Accent)
+  // Active / Playing Row (Dark Blue Accent — inset box-shadow avoids shifting table columns)
   &.playing {
     background: rgba(37, 99, 235, 0.08);
-    border-left: 3px solid $primary;
+
+    td:first-child {
+      box-shadow: inset 3px 0 0 $primary;
+    }
 
     .btn-row-play {
       background: $primary-gradient;
@@ -89,6 +94,7 @@
 .btn-row-play {
   width: 28px;
   height: 28px;
+  margin: 0 auto;
   border-radius: 50%;
   border: 1px solid $border-color;
   background: rgba($bg-card, 0.8);
@@ -116,8 +122,37 @@
   }
 }
 
+// Star / Favorite Toggle Button
+.btn-row-fav {
+  width: 26px;
+  height: 26px;
+  margin: 0 auto;
+  border-radius: $radius-sm;
+  border: 1px solid transparent;
+  background: transparent;
+  color: $foreground-dim;
+  @include flex-center;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  &:hover {
+    color: #fbbf24;
+    background: rgba(251, 191, 36, 0.1);
+    transform: scale(1.1);
+  }
+
+  &.active {
+    color: #fbbf24;
+    filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.45));
+  }
+}
+
 .drag-handle-cell {
-  width: 32px;
   text-align: center;
 }
 
@@ -125,6 +160,7 @@
   @include flex-center;
   width: 24px;
   height: 24px;
+  margin: 0 auto;
   border-radius: $radius-sm;
   color: $foreground-dim;
   cursor: grab;
@@ -150,7 +186,7 @@
   font-weight: 500;
   color: $foreground;
   @include text-truncate;
-  max-width: 320px;
+  width: 100%;
   letter-spacing: -0.01em;
 }
 
@@ -199,7 +235,7 @@
 }
 
 .waveform-cell {
-  padding: 4px 16px;
+  padding: 4px 12px;
 }
 
 .mini-waveform-canvas {
@@ -233,6 +269,7 @@
   color: $foreground-dim;
   width: 26px;
   height: 26px;
+  margin: 0 auto;
   border-radius: $radius-sm;
   @include flex-center;
   cursor: pointer;
