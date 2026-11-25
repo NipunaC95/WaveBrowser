@@ -136,7 +136,7 @@ function createWindow(): void {
         : {}),
     ...(fs.existsSync(windowIconPath) ? { icon: windowIconPath } : {}),
     backgroundColor: '#0a0d14',
-    title: 'WaveBrowse',
+    title: 'Wave Browser',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,

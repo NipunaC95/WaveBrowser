@@ -1,4 +1,4 @@
-# WaveBrowse 🌊 | Pro Audio Asset Manager
+# Wave Browser 🌊 | Pro Audio Asset Manager
 
 > A high-performance, desktop **Audio Asset Manager** and sound library browser engineered for **sound designers**, **music producers**, **game audio engineers**, and **video editors**. 
 
@@ -8,7 +8,7 @@ Manage, audition, and integrate massive local libraries of sound effects (SFX), 
 
 ## 🎧 Purpose-Built for Audio Workflows
 
-Modern audio production requires sorting through tens of thousands of audio assets without sluggish loading times or losing directory organization. **WaveBrowse** preserves your folder taxonomy while providing instant, hardware-accelerated auditioning and seamless drag-and-drop integration into your creative workspace.
+Modern audio production requires sorting through tens of thousands of audio assets without sluggish loading times or losing directory organization. **Wave Browser** preserves your folder taxonomy while providing instant, hardware-accelerated auditioning and seamless drag-and-drop integration into your creative workspace.
 
 ### Key Capabilities
 
@@ -34,7 +34,7 @@ Modern audio production requires sorting through tens of thousands of audio asse
 - 🚀 **Universal Native Drag-and-Drop Integration**:
   - Dedicated `⠿` drag handles on every asset row plus a prominent **"DRAG TO DAW"** launchpad in the master player dock.
   - Powered by Electron's native OS drag API (`startDrag`) with safe `nativeImage` fallbacks.
-  - Drag audio assets directly out of WaveBrowse and drop them into:
+  - Drag audio assets directly out of Wave Browser and drop them into:
     - **DAWs**: Ableton Live, FL Studio, Logic Pro, Reaper, Pro Tools, Studio One, Bitwig, Cubase
     - **Game Engines**: Unreal Engine, Unity, Godot
     - **NLEs**: Adobe Premiere Pro, DaVinci Resolve, Final Cut Pro
@@ -140,6 +140,6 @@ pnpm run dist:win    # Builds Windows (NSIS Installer .exe & Zip)
 ```
 
 Built binaries are output to the [`releases/`](file:///Users/nipunachandimal/Documents/Development/music%20browse/releases) directory:
-- **macOS (Apple Silicon)**: `releases/WaveBrowse-1.0.0-arm64.dmg` & `releases/WaveBrowse-1.0.0-arm64-mac.zip`
-- **macOS (Intel)**: `releases/WaveBrowse-1.0.0.dmg` & `releases/WaveBrowse-1.0.0-mac.zip`
-- **Windows**: `releases/WaveBrowse Setup 1.0.0.exe` (NSIS Installer) & `releases/WaveBrowse-1.0.0-win.zip`
+- **macOS (Apple Silicon)**: `releases/Wave Browser-1.0.0-arm64.dmg` & `releases/Wave Browser-1.0.0-arm64-mac.zip`
+- **macOS (Intel)**: `releases/Wave Browser-1.0.0.dmg` & `releases/Wave Browser-1.0.0-mac.zip`
+- **Windows**: `releases/Wave Browser Setup 1.0.0.exe` (NSIS Installer) & `releases/Wave Browser-1.0.0-win.zip`

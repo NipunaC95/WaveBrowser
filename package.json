@@ -1,5 +1,5 @@
 {
-  "name": "wavebrowse",
+  "name": "wave-browser",
   "version": "1.0.0",
   "description": "Pro-grade desktop audio asset manager & sample library browser with GPU-accelerated WebGL waveforms and native drag-and-drop to any DAW, NLE, or game engine",
   "main": "dist/main.js",

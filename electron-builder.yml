@@ -1,5 +1,5 @@
-appId: com.wavebrowse.app
-productName: WaveBrowse
+appId: com.wavebrowser.app
+productName: Wave Browser
 copyright: Copyright © 2026 Nipuna Chandimal
 
 directories:
@@ -62,7 +62,7 @@ nsis:
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: always
   createStartMenuShortcut: true
-  shortcutName: WaveBrowse
+  shortcutName: Wave Browser
 
 linux:
   category: Audio

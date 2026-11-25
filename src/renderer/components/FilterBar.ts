@@ -42,7 +42,7 @@ export class FilterBarComponent {
     this.favCountBadge = document.getElementById('favCountBadge')!;
     this.formatChips = document.querySelectorAll('.format-chips .chip') as NodeListOf<HTMLButtonElement>;
 
-    const savedAutoNext = localStorage.getItem('wavebrowse_auto_next');
+    const savedAutoNext = localStorage.getItem('wavebrowser_auto_next') ?? localStorage.getItem('wavebrowse_auto_next');
     if (savedAutoNext !== null) {
       this.state.autoNext = savedAutoNext === 'true';
       this.chkAutoNext.checked = this.state.autoNext;
@@ -118,7 +118,7 @@ export class FilterBarComponent {
 
     this.chkAutoNext.addEventListener('change', () => {
       this.state.autoNext = this.chkAutoNext.checked;
-      localStorage.setItem('wavebrowse_auto_next', String(this.state.autoNext));
+      localStorage.setItem('wavebrowser_auto_next', String(this.state.autoNext));
     });
 
     this.chkRecursive.addEventListener('change', () => {

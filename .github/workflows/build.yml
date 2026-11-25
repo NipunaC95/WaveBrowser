@@ -24,11 +24,11 @@ jobs:
       matrix:
         include:
           - os: macos-latest
-            artifact_name: WaveBrowse-macOS
+            artifact_name: Wave-Browser-macOS
           - os: windows-latest
-            artifact_name: WaveBrowse-Windows
+            artifact_name: Wave-Browser-Windows
           - os: ubuntu-latest
-            artifact_name: WaveBrowse-Linux
+            artifact_name: Wave-Browser-Linux
 
     steps:
       - name: Checkout repository
@@ -118,14 +118,14 @@ jobs:
         run: |
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
             TAG="${GITHUB_REF#refs/tags/}"
-            TITLE="WaveBrowse ${TAG}"
+            TITLE="Wave Browser ${TAG}"
           elif [[ -n "${{ github.event.inputs.release_tag }}" ]]; then
             TAG="${{ github.event.inputs.release_tag }}"
-            TITLE="WaveBrowse ${TAG}"
+            TITLE="Wave Browser ${TAG}"
           else
             VERSION=$(node -p "require('./package.json').version")
             TAG="v${VERSION}"
-            TITLE="WaveBrowse v${VERSION}"
+            TITLE="Wave Browser v${VERSION}"
           fi
           echo "tag_name=${TAG}" >> $GITHUB_OUTPUT
           echo "release_title=${TITLE}" >> $GITHUB_OUTPUT

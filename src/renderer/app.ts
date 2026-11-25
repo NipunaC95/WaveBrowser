@@ -1,4 +1,4 @@
-import { AudioFileItem, AudioMetadata } from '../types';
+import { AudioFileItem, AudioMetadata, FolderNode } from '../types';
 import { WaveformEngine } from './waveform';
 import { AudioPlayer } from './player';
 import { parseSearchQuery, matchesParsedSearch, scoreParsedSearch } from './search';
@@ -7,8 +7,9 @@ import { SidebarComponent } from './components/Sidebar';
 import { FilterBarComponent, FilterState } from './components/FilterBar';
 import { TrackListComponent } from './components/TrackList';
 import { MasterPlayerComponent } from './components/MasterPlayer';
+import { MoveModalComponent } from './components/MoveModal';
 
-export class WaveBrowseApp {
+export class WaveBrowserApp {
   private waveformEngine: WaveformEngine;
   private player: AudioPlayer;
 
@@ -18,9 +19,12 @@ export class WaveBrowseApp {
   private filterBar: FilterBarComponent;
   private trackList: TrackListComponent;
   private masterPlayer: MasterPlayerComponent;
+  private moveModal: MoveModalComponent;
+  private toastTimer: number | null = null;
 
   // App State
   private currentRootFolder: string | null = null;
+  private currentRootTree: FolderNode | null = null;
   private currentSelectedFolder: string | null = null;
   private libraryTracks: AudioFileItem[] = [];
   private allTracks: AudioFileItem[] = [];
@@ -41,7 +45,8 @@ export class WaveBrowseApp {
     this.sidebar = new SidebarComponent(
         (path) => this.selectFolder(path),
         () => this.openFolderDialog(),
-        (path) => this.openFolder(path)
+        (path) => this.openFolder(path),
+        (filePaths, targetDir) => this.handleDropFilesToFolder(filePaths, targetDir)
       );
 
     // 3. Initialize FilterBar
@@ -53,6 +58,7 @@ export class WaveBrowseApp {
         onPauseTrack: () => this.player.pause(),
         onSelectTrack: (index) => this.selectIndex(index),
         onToggleFavorite: (filePath) => this.toggleFavorite(filePath),
+        onMoveTrack: (track) => this.openMoveModal(track),
         onStartDrag: (filePath) => window.api.startDrag(filePath),
         onRevealFinder: (filePath) => window.api.revealInFinder(filePath)
       });
@@ -68,6 +74,12 @@ export class WaveBrowseApp {
           onToggleFavorite: (filePath) => this.toggleFavorite(filePath),
           onStartDrag: (filePath) => window.api.startDrag(filePath)
         });
+
+        // 6. Initialize MoveModal
+        this.moveModal = new MoveModalComponent(
+          (track, targetDir) => this.handleMoveFile(track.path, targetDir),
+          (parentDir, folderName) => this.handleCreateSubfolder(parentDir, folderName)
+        );
 
         this.bindPlayerEvents();
         this.bindKeyboardShortcuts();
@@ -89,7 +101,7 @@ export class WaveBrowseApp {
         }
 
   private async loadInitialFolder(): Promise<void> {
-    const lastDir = localStorage.getItem('wavebrowse_last_directory');
+    const lastDir = localStorage.getItem('wavebrowser_last_directory') || localStorage.getItem('wavebrowse_last_directory');
     if (lastDir) {
       try {
         const tree = await window.api.getFolderTree(lastDir);
@@ -112,9 +124,10 @@ export class WaveBrowseApp {
     this.currentSelectedFolder = folderPath;
     this.filterBar.clearSearch(true);
     this.header.setBreadcrumbs(folderPath);
-    localStorage.setItem('wavebrowse_last_directory', folderPath);
+    localStorage.setItem('wavebrowser_last_directory', folderPath);
 
     const tree = await window.api.getFolderTree(folderPath);
+    this.currentRootTree = tree;
     this.sidebar.setTree(tree, folderPath);
 
     this.libraryTracks = await window.api.scanAudioFiles({
@@ -129,7 +142,6 @@ export class WaveBrowseApp {
     this.currentSelectedFolder = folderPath;
     this.filterBar.clearSearch(true);
     this.header.setBreadcrumbs(folderPath);
-    localStorage.setItem('wavebrowse_last_directory', folderPath);
     this.allTracks = this.getFolderTracks(folderPath);
     this.applyFilters();
   }
@@ -152,7 +164,7 @@ export class WaveBrowseApp {
 
   private loadFavorites(): void {
     try {
-      const raw = localStorage.getItem('wavebrowse_favorites');
+      const raw = localStorage.getItem('wavebrowser_favorites') ?? localStorage.getItem('wavebrowse_favorites');
       if (raw) {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed)) {
@@ -166,7 +178,7 @@ export class WaveBrowseApp {
 
   private saveFavorites(): void {
     try {
-      localStorage.setItem('wavebrowse_favorites', JSON.stringify(Array.from(this.favorites)));
+      localStorage.setItem('wavebrowser_favorites', JSON.stringify(Array.from(this.favorites)));
     } catch {
       // Ignore storage quota errors
     }
@@ -341,8 +353,129 @@ export class WaveBrowseApp {
   };
 }
 
+  private openMoveModal(track: AudioFileItem): void {
+    this.moveModal.open(track, this.currentRootTree, this.currentRootFolder);
+  }
+
+  private async handleCreateSubfolder(
+    parentDir: string,
+    folderName: string
+  ): Promise<{ ok: boolean; path?: string; error?: string }> {
+    const res = await window.api.createFolder(parentDir, folderName, this.currentRootFolder || undefined);
+    if (res.ok && this.currentRootFolder) {
+      const tree = await window.api.getFolderTree(this.currentRootFolder);
+      this.currentRootTree = tree;
+      this.sidebar.setTree(tree, this.currentSelectedFolder || this.currentRootFolder);
+      this.moveModal.updateTree(tree, this.currentRootFolder);
+    }
+    return res;
+  }
+
+  private async handleDropFilesToFolder(filePaths: string[], targetDir: string): Promise<void> {
+    let movedCount = 0;
+    let lastError: string | undefined;
+
+    for (const filePath of filePaths) {
+      const res = await this.handleMoveFile(filePath, targetDir, true);
+      if (res.ok) {
+        movedCount++;
+      } else {
+        lastError = res.error;
+      }
+    }
+
+    if (movedCount > 0) {
+      const folderName = targetDir.split(/[/\\]/).pop() || targetDir;
+      this.showToast(`Moved ${movedCount} ${movedCount === 1 ? 'file' : 'files'} → ${folderName}`);
+    } else if (lastError) {
+      this.showToast(lastError, true);
+    }
+  }
+
+  private async handleMoveFile(
+    sourcePath: string,
+    targetDir: string,
+    suppressToast = false
+  ): Promise<{ ok: boolean; error?: string }> {
+    const releaseState = this.player.releaseIfMatching(sourcePath);
+
+    const res = await window.api.moveFile(
+      sourcePath,
+      targetDir,
+      this.currentRootFolder || undefined
+    );
+
+    if (!res.ok || !res.newPath || !res.newDir) {
+      if (releaseState.wasActive) {
+        const originalTrack = this.libraryTracks.find((t) => t.path === sourcePath);
+        if (originalTrack) {
+          this.player.updateMovedTrack(originalTrack, releaseState.currentTime, false);
+        }
+      }
+      if (!suppressToast && res.error) {
+        this.showToast(res.error, true);
+      }
+      return { ok: false, error: res.error || 'Move failed.' };
+    }
+
+    const newPath = res.newPath;
+    const newDir = res.newDir;
+
+    const track = this.libraryTracks.find((t) => t.path === sourcePath);
+    if (track) {
+      track.path = newPath;
+      track.dir = newDir;
+    }
+
+    if (this.favorites.has(sourcePath)) {
+      this.favorites.delete(sourcePath);
+      this.favorites.add(newPath);
+      this.saveFavorites();
+    }
+
+    this.waveformEngine.renameCachedPath(sourcePath, newPath);
+
+    if (releaseState.wasActive && track) {
+      this.player.updateMovedTrack(track, releaseState.currentTime, releaseState.wasPlaying);
+    }
+
+    if (this.currentRootFolder) {
+      const tree = await window.api.getFolderTree(this.currentRootFolder);
+      this.currentRootTree = tree;
+      this.sidebar.setTree(tree, this.currentSelectedFolder || this.currentRootFolder);
+    }
+
+    this.applyFilters();
+
+    if (!suppressToast) {
+      const fileName = newPath.split(/[/\\]/).pop() || newPath;
+      const folderName = newDir.split(/[/\\]/).pop() || newDir;
+      this.showToast(`Moved ${fileName} → ${folderName}`);
+    }
+
+    return { ok: true };
+  }
+
+  private showToast(message: string, isError = false): void {
+    const toast = document.getElementById('appToast');
+    if (!toast) return;
+    toast.textContent = message;
+    toast.classList.toggle('error', isError);
+    toast.classList.add('visible');
+
+    if (this.toastTimer !== null) {
+      window.clearTimeout(this.toastTimer);
+    }
+    this.toastTimer = window.setTimeout(() => {
+      toast.classList.remove('visible');
+      this.toastTimer = null;
+    }, 2600);
+  }
+
   private bindKeyboardShortcuts(): void {
     window.addEventListener('keydown', (e) => {
+      if (this.moveModal.isOpen()) return;
+
       if ((e.ctrlKey || e.metaKey) && e.code === 'KeyF') {
         e.preventDefault();
         this.filterBar.focusSearch();
@@ -375,6 +508,11 @@ export class WaveBrowseApp {
           if (targetTrack) {
             this.toggleFavorite(targetTrack.path);
           }
+        } else if (e.code === 'KeyM') {
+          const targetTrack = this.player.getCurrentTrack() || this.filteredTracks[this.currentTrackIndex];
+          if (targetTrack) {
+            this.openMoveModal(targetTrack);
+          }
         } else if (e.code === 'KeyL') {
           this.player.toggleLoop();
         } else if (e.code === 'Escape') {
@@ -390,5 +528,5 @@ export class WaveBrowseApp {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  new WaveBrowseApp();
+  new WaveBrowserApp();
 });

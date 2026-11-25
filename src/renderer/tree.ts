@@ -128,7 +128,7 @@ export class FolderTreeUI {
         }
       }
       if (droppedPaths.length === 0) {
-        const customPath = e.dataTransfer.getData('application/x-wavebrowse-path');
+        const customPath = e.dataTransfer.getData('application/x-wavebrowser-path');
         if (customPath) droppedPaths.push(customPath);
       }
 
