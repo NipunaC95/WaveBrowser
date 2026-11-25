@@ -81,12 +81,19 @@ export class FilterBarComponent {
   private bindEvents(): void {
     let debounceTimer: number;
     this.searchInput.addEventListener('input', () => {
-      this.btnClearSearch.hidden = this.searchInput.value.length === 0;
+      const rawVal = this.searchInput.value;
+      this.btnClearSearch.hidden = rawVal.length === 0;
       clearTimeout(debounceTimer);
-      debounceTimer = window.setTimeout(() => {
-        this.state.searchQuery = this.searchInput.value.trim();
+      const trimmed = rawVal.trim();
+      if (trimmed.length === 0) {
+        this.state.searchQuery = '';
         this.onChangeCallback(this.state);
-      }, 60);
+        return;
+      }
+      debounceTimer = window.setTimeout(() => {
+        this.state.searchQuery = trimmed;
+        this.onChangeCallback(this.state);
+      }, 100);
     });
 
     this.searchInput.addEventListener('keydown', (e) => {

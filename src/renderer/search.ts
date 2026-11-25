@@ -163,6 +163,7 @@ export class SearchIndex {
   private entries: IndexedTrackEntry[] = [];
   private pathToId = new Map<string, number>();
   private trigramMap = new Map<string, Set<number>>();
+  private bigramMap = new Map<string, Set<number>>();
   private extMap = new Map<string, Set<number>>();
   private dirMap = new Map<string, Set<number>>();
 
@@ -174,16 +175,39 @@ export class SearchIndex {
     return this.entries.map((e) => e.track);
   }
 
-  private addTrigrams(text: string, id: number): void {
-    if (text.length < 3) return;
-    for (let i = 0; i <= text.length - 3; i++) {
-      const tri = text.slice(i, i + 3);
-      let bucket = this.trigramMap.get(tri);
-      if (!bucket) {
-        bucket = new Set<number>();
-        this.trigramMap.set(tri, bucket);
+  countFavorites(favorites: Set<string>): number {
+    if (favorites.size === 0 || this.entries.length === 0) return 0;
+    let count = 0;
+    for (const favPath of favorites) {
+      if (this.pathToId.has(favPath)) {
+        count++;
       }
-      bucket.add(id);
+    }
+    return count;
+  }
+
+  private addNgrams(text: string, id: number): void {
+    if (text.length >= 2) {
+      for (let i = 0; i <= text.length - 2; i++) {
+        const bi = text.slice(i, i + 2);
+        let bucket = this.bigramMap.get(bi);
+        if (!bucket) {
+          bucket = new Set<number>();
+          this.bigramMap.set(bi, bucket);
+        }
+        bucket.add(id);
+      }
+    }
+    if (text.length >= 3) {
+      for (let i = 0; i <= text.length - 3; i++) {
+        const tri = text.slice(i, i + 3);
+        let bucket = this.trigramMap.get(tri);
+        if (!bucket) {
+          bucket = new Set<number>();
+          this.trigramMap.set(tri, bucket);
+        }
+        bucket.add(id);
+      }
     }
   }
 
@@ -222,7 +246,7 @@ export class SearchIndex {
     }
     dirBucket.add(id);
 
-    this.addTrigrams(haystack, id);
+    this.addNgrams(haystack, id);
   }
 
   static async build(
@@ -292,7 +316,7 @@ export class SearchIndex {
     if (!entry) return;
     entry.bpm = getTrackBpm(entry.track);
     entry.haystack = buildHaystack(entry.track);
-    this.addTrigrams(entry.haystack, id);
+    this.addNgrams(entry.haystack, id);
   }
 
   moveTrack(
@@ -331,7 +355,7 @@ export class SearchIndex {
     }
     newDirBucket.add(id);
 
-    this.addTrigrams(entry.haystack, id);
+    this.addNgrams(entry.haystack, id);
   }
 
   search(
@@ -349,8 +373,8 @@ export class SearchIndex {
       candidateIds = new Set(extBucket);
     }
 
-    // 2. Narrow by trigram HashMap buckets for positive tokens >= 3 chars
-    const trigramBuckets: Set<number>[] = [];
+    // 2. Narrow by trigram/bigram HashMap buckets for positive tokens >= 2 chars
+    const ngramBuckets: Set<number>[] = [];
     for (const token of parsed.positiveTokens) {
       if (token.length >= 3) {
         for (let i = 0; i <= token.length - 3; i++) {
@@ -358,18 +382,25 @@ export class SearchIndex {
           if (!bucket || bucket.size === 0) {
             return [];
           }
-          trigramBuckets.push(bucket);
+          ngramBuckets.push(bucket);
         }
+      } else if (token.length === 2) {
+        const bucket = this.bigramMap.get(token);
+        if (!bucket || bucket.size === 0) {
+          return [];
+        }
+        ngramBuckets.push(bucket);
       }
     }
 
-    if (trigramBuckets.length > 0) {
-      // Intersect smallest buckets first for maximum speed
-      trigramBuckets.sort((a, b) => a.size - b.size);
-      for (const bucket of trigramBuckets) {
+    if (ngramBuckets.length > 0) {
+      // Intersect smallest buckets first and short-circuit once candidate set is tiny
+      ngramBuckets.sort((a, b) => a.size - b.size);
+      for (const bucket of ngramBuckets) {
         if (candidateIds === null) {
           candidateIds = new Set(bucket);
         } else {
+          if (candidateIds.size <= 32) break;
           candidateIds = intersectSets(candidateIds, bucket);
         }
         if (candidateIds.size === 0) return [];

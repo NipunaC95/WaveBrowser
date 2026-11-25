@@ -282,7 +282,15 @@ export class WaveBrowserApp {
     return isNowFavorite;
   }
 
-  private updateFavoritesCount(scopeTracks: AudioFileItem[] = this.allTracks): void {
+  private updateFavoritesCount(scopeTracks: AudioFileItem[] = this.allTracks, useGlobalIndex = false): void {
+    if (this.favorites.size === 0) {
+      this.filterBar.setFavoritesCount(0);
+      return;
+    }
+    if (useGlobalIndex && this.currentSearchIndex) {
+      this.filterBar.setFavoritesCount(this.currentSearchIndex.countFavorites(this.favorites));
+      return;
+    }
     const count = scopeTracks.filter((t) => this.favorites.has(t.path)).length;
     this.filterBar.setFavoritesCount(count);
   }
@@ -334,7 +342,7 @@ export class WaveBrowserApp {
               this.currentTrackIndex = playingPath
                 ? list.findIndex((t) => t.path === playingPath)
                 : -1;
-              this.updateFavoritesCount(baseScope);
+              this.updateFavoritesCount(baseScope, isGlobalSearch);
               this.filterBar.setFileCount(list.length);
               this.trackList.render(
                 list,

@@ -13,6 +13,7 @@ export interface TrackListHandlers {
 }
 
 export class TrackListComponent {
+  private tableContainer: HTMLElement;
   private tbody: HTMLTableSectionElement;
   private emptyState: HTMLElement;
   private indexingOverlay: HTMLElement;
@@ -22,7 +23,15 @@ export class TrackListComponent {
   private handlers: TrackListHandlers;
 
   private currentTracks: AudioFileItem[] = [];
-  private miniCanvases = new Map<string, { canvas: HTMLCanvasElement; peaks: WaveformPeaks; durationEl: HTMLElement }>();
+  private currentAutoPlay = true;
+  private currentFavorites = new Set<string>();
+  private currentHighlightTerms: string[] = [];
+  private currentGlobalRoot: string | null = null;
+  private renderedCount = 0;
+  private readonly batchSize = 50;
+  private renderGeneration = 0;
+
+  private miniCanvases = new Map<string, { canvas: HTMLCanvasElement; peaks: WaveformPeaks; durationEl: HTMLElement; drawnInstant: boolean }>();
   private observer: IntersectionObserver | null = null;
   private activeTrackPath: string | null = null;
   private isCurrentlyPlaying = false;
@@ -32,6 +41,7 @@ export class TrackListComponent {
     this.waveformEngine = waveformEngine;
     this.handlers = handlers;
 
+    this.tableContainer = document.querySelector('.track-table-container') as HTMLElement;
     this.tbody = document.getElementById('trackListBody') as HTMLTableSectionElement;
     this.emptyState = document.getElementById('emptyState')!;
     this.indexingOverlay = document.getElementById('indexingOverlay')!;
@@ -39,14 +49,18 @@ export class TrackListComponent {
     this.indexingProgressBar = document.getElementById('indexingProgressBar')!;
 
     this.initObserver();
+    this.initInfiniteScroll();
   }
 
   setIndexingState(active: boolean, detail = 'Building search index...', progressRatio = 0.2): void {
     this.isIndexing = active;
     this.indexingOverlay.hidden = !active;
     if (active) {
+      this.renderGeneration++;
+      this.observer?.disconnect();
       this.tbody.innerHTML = '';
       this.miniCanvases.clear();
+      this.renderedCount = 0;
       this.emptyState.style.display = 'none';
       this.indexingDetail.textContent = detail;
       const pct = Math.max(8, Math.min(100, Math.round(progressRatio * 100)));
@@ -61,14 +75,24 @@ export class TrackListComponent {
           if (entry.isIntersecting) {
             const trackPath = (entry.target as HTMLElement).dataset.trackPath;
             if (trackPath) {
-              this.loadRealPeaksLazy(trackPath);
+              this.drawInstantAndLoadReal(trackPath);
               this.observer?.unobserve(entry.target);
             }
           }
         }
       },
-      { root: document.querySelector('.track-table-container'), rootMargin: '120px' }
+      { root: this.tableContainer, rootMargin: '160px' }
     );
+  }
+
+  private initInfiniteScroll(): void {
+    this.tableContainer.addEventListener('scroll', () => {
+      if (this.renderedCount >= this.currentTracks.length) return;
+      const { scrollTop, clientHeight, scrollHeight } = this.tableContainer;
+      if (scrollTop + clientHeight >= scrollHeight - 400) {
+        this.appendNextBatch(this.batchSize);
+      }
+    }, { passive: true });
   }
 
   render(
@@ -78,9 +102,17 @@ export class TrackListComponent {
     highlightTerms: string[] = [],
     globalRootFolder: string | null = null
   ): void {
+    this.renderGeneration++;
+    this.observer?.disconnect();
     this.currentTracks = tracks;
+    this.currentAutoPlay = autoPlay;
+    this.currentFavorites = favorites;
+    this.currentHighlightTerms = highlightTerms;
+    this.currentGlobalRoot = globalRootFolder;
+    this.renderedCount = 0;
     this.tbody.innerHTML = '';
     this.miniCanvases.clear();
+    this.tableContainer.scrollTop = 0;
 
     if (tracks.length === 0) {
       this.emptyState.style.display = this.isIndexing ? 'none' : 'flex';
@@ -88,9 +120,22 @@ export class TrackListComponent {
     }
     this.emptyState.style.display = 'none';
 
-    const fragment = document.createDocumentFragment();
+    this.appendNextBatch(this.batchSize);
+  }
 
-    tracks.forEach((track, index) => {
+  private appendNextBatch(count: number): void {
+    if (this.renderedCount >= this.currentTracks.length) return;
+
+    const start = this.renderedCount;
+    const end = Math.min(this.currentTracks.length, start + count);
+    const fragment = document.createDocumentFragment();
+    const autoPlay = this.currentAutoPlay;
+    const favorites = this.currentFavorites;
+    const highlightTerms = this.currentHighlightTerms;
+    const globalRootFolder = this.currentGlobalRoot;
+
+    for (let index = start; index < end; index++) {
+      const track = this.currentTracks[index];
       const tr = document.createElement('tr');
       tr.className = 'track-row';
       tr.setAttribute('draggable', 'true');
@@ -248,15 +293,15 @@ export class TrackListComponent {
 
       fragment.appendChild(tr);
 
-      // Instant 0ms pseudo waveform preview
+      // Register canvas lazily; actual drawing only runs when the row enters the viewport
       const instantPeaks = this.waveformEngine.generateInstantPeaks(track.name, track.sizeBytes, 50);
-      this.waveformEngine.drawMiniWaveform(canvas, instantPeaks.peaks, 0, false);
-      this.miniCanvases.set(track.path, { canvas, peaks: instantPeaks, durationEl: tdDur });
+      this.miniCanvases.set(track.path, { canvas, peaks: instantPeaks, durationEl: tdDur, drawnInstant: false });
 
-      // Observe for real peak decode on view
+      // Observe for viewport waveform draw & real peak decode
       this.observer?.observe(tr);
-    });
+    }
 
+    this.renderedCount = end;
     this.tbody.appendChild(fragment);
 
     if (this.activeTrackPath) {
@@ -264,12 +309,25 @@ export class TrackListComponent {
     }
   }
 
+  private drawInstantAndLoadReal(trackPath: string): void {
+    const entry = this.miniCanvases.get(trackPath);
+    if (!entry) return;
+    if (!entry.drawnInstant) {
+      entry.drawnInstant = true;
+      const isThisActive = this.activeTrackPath === trackPath;
+      this.waveformEngine.drawMiniWaveform(entry.canvas, entry.peaks.peaks, 0, isThisActive && this.isCurrentlyPlaying);
+    }
+    void this.loadRealPeaksLazy(trackPath);
+  }
+
   private async loadRealPeaksLazy(trackPath: string): Promise<void> {
+    const gen = this.renderGeneration;
     const entry = this.miniCanvases.get(trackPath);
     if (!entry) return;
 
     try {
       const realPeaks = await this.waveformEngine.getPeaks(trackPath, 50, false);
+      if (gen !== this.renderGeneration) return;
       entry.peaks = realPeaks;
 
       const track = this.currentTracks.find((t) => t.path === trackPath);
@@ -329,9 +387,16 @@ export class TrackListComponent {
   }
 
   highlightRow(index: number): void {
+    if (index >= this.renderedCount && index < this.currentTracks.length) {
+      this.appendNextBatch(index - this.renderedCount + 20);
+    }
     const rows = this.tbody.querySelectorAll('.track-row');
     rows.forEach((r, i) => {
-      r.classList.toggle('selected', i === index);
+      const isSelected = i === index;
+      r.classList.toggle('selected', isSelected);
+      if (isSelected) {
+        (r as HTMLElement).scrollIntoView({ block: 'nearest' });
+      }
     });
   }
 
