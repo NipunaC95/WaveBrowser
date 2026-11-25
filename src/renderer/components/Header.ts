@@ -11,7 +11,18 @@ export class HeaderComponent {
     this.btnLoadDemo.addEventListener('click', onLoadDemo);
   }
 
-  setBreadcrumbs(path: string): void {
-    this.breadcrumbsEl.innerHTML = `<span class="breadcrumb-icon">${ICONS.folder}</span><span>${path || 'No folder selected'}</span>`;
+  setBreadcrumbs(path: string, globalSearchRoot?: string): void {
+    this.breadcrumbsEl.textContent = '';
+    const iconSpan = document.createElement('span');
+    iconSpan.className = 'breadcrumb-icon';
+    iconSpan.innerHTML = ICONS.folder;
+
+    const textSpan = document.createElement('span');
+    textSpan.textContent = globalSearchRoot
+      ? `Global Search in ${globalSearchRoot}`
+      : (path || 'No folder selected');
+
+    this.breadcrumbsEl.appendChild(iconSpan);
+    this.breadcrumbsEl.appendChild(textSpan);
   }
 }

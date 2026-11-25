@@ -3,12 +3,15 @@ export interface FilterState {
   formatFilter: string;
   favoritesOnly: boolean;
   autoPlay: boolean;
+  autoNext: boolean;
   recursive: boolean;
 }
 
 export class FilterBarComponent {
   private searchInput: HTMLInputElement;
+  private btnClearSearch: HTMLButtonElement;
   private chkAutoPlay: HTMLInputElement;
+  private chkAutoNext: HTMLInputElement;
   private chkRecursive: HTMLInputElement;
   private fileCountBadge: HTMLElement;
   private btnFilterFavorites: HTMLButtonElement;
@@ -20,6 +23,7 @@ export class FilterBarComponent {
     formatFilter: 'ALL',
     favoritesOnly: false,
     autoPlay: true,
+    autoNext: true,
     recursive: true
   };
 
@@ -29,12 +33,20 @@ export class FilterBarComponent {
     this.onChangeCallback = onChange;
 
     this.searchInput = document.getElementById('searchInput') as HTMLInputElement;
+    this.btnClearSearch = document.getElementById('btnClearSearch') as HTMLButtonElement;
     this.chkAutoPlay = document.getElementById('chkAutoPlay') as HTMLInputElement;
+    this.chkAutoNext = document.getElementById('chkAutoNext') as HTMLInputElement;
     this.chkRecursive = document.getElementById('chkRecursive') as HTMLInputElement;
     this.fileCountBadge = document.getElementById('fileCountBadge')!;
     this.btnFilterFavorites = document.getElementById('btnFilterFavorites') as HTMLButtonElement;
     this.favCountBadge = document.getElementById('favCountBadge')!;
     this.formatChips = document.querySelectorAll('.format-chips .chip') as NodeListOf<HTMLButtonElement>;
+
+    const savedAutoNext = localStorage.getItem('wavebrowse_auto_next');
+    if (savedAutoNext !== null) {
+      this.state.autoNext = savedAutoNext === 'true';
+      this.chkAutoNext.checked = this.state.autoNext;
+    }
 
     this.bindEvents();
   }
@@ -51,14 +63,46 @@ export class FilterBarComponent {
     this.favCountBadge.textContent = `${count}`;
   }
 
+  focusSearch(): void {
+    this.searchInput.focus();
+    this.searchInput.select();
+  }
+
+  clearSearch(silent = false): void {
+    if (!this.searchInput.value && !this.state.searchQuery) return;
+    this.searchInput.value = '';
+    this.btnClearSearch.hidden = true;
+    this.state.searchQuery = '';
+    if (!silent) {
+      this.onChangeCallback(this.state);
+    }
+  }
+
   private bindEvents(): void {
     let debounceTimer: number;
     this.searchInput.addEventListener('input', () => {
+      this.btnClearSearch.hidden = this.searchInput.value.length === 0;
       clearTimeout(debounceTimer);
       debounceTimer = window.setTimeout(() => {
-        this.state.searchQuery = this.searchInput.value.trim().toLowerCase();
+        this.state.searchQuery = this.searchInput.value.trim();
         this.onChangeCallback(this.state);
       }, 60);
+    });
+
+    this.searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (this.searchInput.value.length > 0) {
+          e.preventDefault();
+          this.clearSearch();
+        } else {
+          this.searchInput.blur();
+        }
+      }
+    });
+
+    this.btnClearSearch.addEventListener('click', () => {
+      this.clearSearch();
+      this.searchInput.focus();
     });
 
     this.btnFilterFavorites.addEventListener('click', () => {
@@ -70,6 +114,11 @@ export class FilterBarComponent {
     this.chkAutoPlay.addEventListener('change', () => {
       this.state.autoPlay = this.chkAutoPlay.checked;
       this.onChangeCallback(this.state);
+    });
+
+    this.chkAutoNext.addEventListener('change', () => {
+      this.state.autoNext = this.chkAutoNext.checked;
+      localStorage.setItem('wavebrowse_auto_next', String(this.state.autoNext));
     });
 
     this.chkRecursive.addEventListener('change', () => {

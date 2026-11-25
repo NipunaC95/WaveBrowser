@@ -1,6 +1,7 @@
 import { AudioFileItem, AudioMetadata } from '../types';
 import { WaveformEngine } from './waveform';
 import { AudioPlayer } from './player';
+import { parseSearchQuery, matchesParsedSearch, scoreParsedSearch } from './search';
 import { HeaderComponent } from './components/Header';
 import { SidebarComponent } from './components/Sidebar';
 import { FilterBarComponent, FilterState } from './components/FilterBar';
@@ -21,6 +22,7 @@ export class WaveBrowseApp {
   // App State
   private currentRootFolder: string | null = null;
   private currentSelectedFolder: string | null = null;
+  private libraryTracks: AudioFileItem[] = [];
   private allTracks: AudioFileItem[] = [];
   private filteredTracks: AudioFileItem[] = [];
   private currentTrackIndex = -1;
@@ -108,31 +110,44 @@ export class WaveBrowseApp {
   async openFolder(folderPath: string): Promise<void> {
     this.currentRootFolder = folderPath;
     this.currentSelectedFolder = folderPath;
+    this.filterBar.clearSearch(true);
     this.header.setBreadcrumbs(folderPath);
     localStorage.setItem('wavebrowse_last_directory', folderPath);
 
     const tree = await window.api.getFolderTree(folderPath);
     this.sidebar.setTree(tree, folderPath);
 
-    await this.scanTracks(folderPath);
+    this.libraryTracks = await window.api.scanAudioFiles({
+      dirPath: folderPath,
+      recursive: true
+    });
+    this.allTracks = this.getFolderTracks(folderPath);
+    this.applyFilters();
   }
 
   private async selectFolder(folderPath: string): Promise<void> {
     this.currentSelectedFolder = folderPath;
+    this.filterBar.clearSearch(true);
     this.header.setBreadcrumbs(folderPath);
     localStorage.setItem('wavebrowse_last_directory', folderPath);
-    await this.scanTracks(folderPath);
+    this.allTracks = this.getFolderTracks(folderPath);
+    this.applyFilters();
   }
 
-  private async scanTracks(folderPath: string): Promise<void> {
-    const filterState = this.filterBar.getState();
-    const tracks = await window.api.scanAudioFiles({
-      dirPath: folderPath,
-      recursive: filterState.recursive !== false
-    });
+  private normalizeDir(dir: string): string {
+    const stripped = dir.replace(/[\\/]+$/, '');
+    return window.api.platform === 'win32' ? stripped.toLowerCase() : stripped;
+  }
 
-    this.allTracks = tracks;
-    this.applyFilters();
+  private getFolderTracks(folderPath: string): AudioFileItem[] {
+    const recursive = this.filterBar.getState().recursive !== false;
+    const target = this.normalizeDir(folderPath);
+    return this.libraryTracks.filter((track) => {
+      const trackDir = this.normalizeDir(track.dir);
+      if (trackDir === target) return true;
+      if (!recursive) return false;
+      return trackDir.startsWith(target + '\\') || trackDir.startsWith(target + '/');
+    });
   }
 
   private loadFavorites(): void {
@@ -180,14 +195,26 @@ export class WaveBrowseApp {
     return isNowFavorite;
   }
 
-  private updateFavoritesCount(): void {
-    const count = this.allTracks.filter((t) => this.favorites.has(t.path)).length;
+  private updateFavoritesCount(scopeTracks: AudioFileItem[] = this.allTracks): void {
+    const count = scopeTracks.filter((t) => this.favorites.has(t.path)).length;
     this.filterBar.setFavoritesCount(count);
   }
 
   private applyFilters(): void {
           const { searchQuery, formatFilter, favoritesOnly, autoPlay } = this.filterBar.getState();
-          let list = this.allTracks;
+          const isGlobalSearch = searchQuery.length > 0;
+          if (!isGlobalSearch && this.currentSelectedFolder) {
+            this.allTracks = this.getFolderTracks(this.currentSelectedFolder);
+          }
+
+          const baseScope = isGlobalSearch ? this.libraryTracks : this.allTracks;
+          let list = baseScope;
+          let highlightTerms: string[] = [];
+
+          this.header.setBreadcrumbs(
+            this.currentSelectedFolder || '',
+            isGlobalSearch ? (this.currentRootFolder || 'Library') : undefined
+          );
 
             if (favoritesOnly) {
               list = list.filter((t) => this.favorites.has(t.path));
@@ -197,8 +224,12 @@ export class WaveBrowseApp {
               list = list.filter((t) => t.extension === formatFilter);
             }
 
-              if (searchQuery) {
-                list = list.filter((t) => t.name.toLowerCase().includes(searchQuery));
+              if (isGlobalSearch) {
+                const parsed = parseSearchQuery(searchQuery);
+                highlightTerms = parsed.highlightTerms;
+                list = list
+                  .filter((t) => matchesParsedSearch(t, parsed, this.favorites.has(t.path)))
+                  .sort((a, b) => scoreParsedSearch(b, parsed) - scoreParsedSearch(a, parsed));
               }
 
               this.filteredTracks = list;
@@ -206,9 +237,15 @@ export class WaveBrowseApp {
               this.currentTrackIndex = playingPath
                 ? list.findIndex((t) => t.path === playingPath)
                 : -1;
-              this.updateFavoritesCount();
+              this.updateFavoritesCount(baseScope);
               this.filterBar.setFileCount(list.length);
-              this.trackList.render(list, autoPlay, this.favorites);
+              this.trackList.render(
+                list,
+                autoPlay,
+                this.favorites,
+                highlightTerms,
+                isGlobalSearch ? this.currentRootFolder : null
+              );
               if (this.currentTrackIndex >= 0) {
                 this.trackList.highlightRow(this.currentTrackIndex);
               }
@@ -240,8 +277,12 @@ export class WaveBrowseApp {
 
       // Load metadata asynchronously
       window.api.getMetadata(track.path).then((meta: AudioMetadata | null) => {
-        if (meta && meta.duration > 0 && !track.duration) {
-          track.duration = meta.duration;
+        if (meta) {
+          if (meta.duration > 0 && !track.duration) track.duration = meta.duration;
+          if (meta.sampleRate > 0) track.sampleRate = meta.sampleRate;
+          if (meta.bitsPerSample) track.bitsPerSample = meta.bitsPerSample;
+          if (meta.numberOfChannels) track.numberOfChannels = meta.numberOfChannels;
+          if (meta.bpm) track.bpm = meta.bpm;
         }
         if (this.player.getCurrentTrack()?.path === track.path) {
           this.masterPlayer.updateMetadata(meta);
@@ -291,6 +332,9 @@ export class WaveBrowseApp {
   };
 
   this.player.onEnded = () => {
+    if (!this.filterBar.getState().autoNext) {
+      return;
+    }
     if (this.currentTrackIndex < this.filteredTracks.length - 1) {
       this.playIndex(this.currentTrackIndex + 1);
     }
@@ -299,7 +343,19 @@ export class WaveBrowseApp {
 
   private bindKeyboardShortcuts(): void {
     window.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.code === 'KeyF') {
+        e.preventDefault();
+        this.filterBar.focusSearch();
+        return;
+      }
+
       if (e.target instanceof HTMLInputElement) return;
+
+      if (e.key === '/') {
+        e.preventDefault();
+        this.filterBar.focusSearch();
+        return;
+      }
 
         if (e.code === 'Space') {
           e.preventDefault();

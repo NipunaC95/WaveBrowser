@@ -86,7 +86,12 @@
                 <path d="m21 21-4.3-4.3"/>
               </svg>
             </span>
-            <input type="text" id="searchInput" class="search-input" placeholder="Search audio assets, bpm, tags...">
+            <input type="text" id="searchInput" class="search-input" placeholder="Search name, folder, bpm:128, ext:wav, -loop (Ctrl+F)">
+            <button id="btnClearSearch" class="btn-clear-search" title="Clear search (Esc)" aria-label="Clear search" hidden>
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+              </svg>
+            </button>
           </div>
 
           <div class="format-chips" id="formatFilters">
@@ -109,6 +114,11 @@
             <label class="switch-label" title="Audition immediately when selecting tracks">
               <input type="checkbox" id="chkAutoPlay" checked>
               <span>AUTO-PLAY</span>
+            </label>
+
+            <label class="switch-label" title="Automatically play the next clip when the current one finishes (turn off to block auto-advance)">
+              <input type="checkbox" id="chkAutoNext" checked>
+              <span>AUTO-NEXT</span>
             </label>
 
             <label class="switch-label" title="Show all audio files in subfolders">

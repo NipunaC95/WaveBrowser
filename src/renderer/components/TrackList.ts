@@ -50,7 +50,13 @@ export class TrackListComponent {
     );
   }
 
-  render(tracks: AudioFileItem[], autoPlay: boolean, favorites: Set<string> = new Set()): void {
+  render(
+    tracks: AudioFileItem[],
+    autoPlay: boolean,
+    favorites: Set<string> = new Set(),
+    highlightTerms: string[] = [],
+    globalRootFolder: string | null = null
+  ): void {
     this.currentTracks = tracks;
     this.tbody.innerHTML = '';
     this.miniCanvases.clear();
@@ -129,9 +135,19 @@ export class TrackListComponent {
       const tdName = document.createElement('td');
       const titleSpan = document.createElement('div');
       titleSpan.className = 'track-title';
-      titleSpan.textContent = track.name;
+      this.renderHighlightedText(titleSpan, track.name, highlightTerms);
       titleSpan.title = track.path;
       tdName.appendChild(titleSpan);
+      if (globalRootFolder) {
+        const relDir = this.getRelativeDirLabel(track.dir, globalRootFolder);
+        if (relDir) {
+          const folderSub = document.createElement('div');
+          folderSub.className = 'track-folder-sub';
+          folderSub.textContent = relDir;
+          folderSub.title = track.dir;
+          tdName.appendChild(folderSub);
+        }
+      }
       tr.appendChild(tdName);
 
       // 4. Format Tag
@@ -284,6 +300,49 @@ export class TrackListComponent {
     rows.forEach((r, i) => {
       r.classList.toggle('selected', i === index);
     });
+  }
+
+  private getRelativeDirLabel(trackDir: string, rootDir: string): string {
+    const cleanTrack = trackDir.replace(/[\\/]+$/, '');
+    const cleanRoot = rootDir.replace(/[\\/]+$/, '');
+    const isWin = window.api.platform === 'win32';
+    const trackCmp = isWin ? cleanTrack.toLowerCase() : cleanTrack;
+    const rootCmp = isWin ? cleanRoot.toLowerCase() : cleanRoot;
+    if (trackCmp === rootCmp) return '.';
+    if (trackCmp.startsWith(rootCmp + '\\') || trackCmp.startsWith(rootCmp + '/')) {
+      return cleanTrack.slice(cleanRoot.length + 1);
+    }
+    return trackDir;
+  }
+
+  private renderHighlightedText(container: HTMLElement, text: string, terms: string[]): void {
+    const cleanTerms = Array.from(new Set(terms.map((t) => t.trim()).filter((t) => t.length > 0)));
+    if (cleanTerms.length === 0) {
+      container.textContent = text;
+      return;
+    }
+
+    const escaped = cleanTerms
+      .sort((a, b) => b.length - a.length)
+      .map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    const regex = new RegExp(`(${escaped.join('|')})`, 'ig');
+
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+    while ((match = regex.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        container.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+      }
+      const mark = document.createElement('mark');
+      mark.className = 'search-highlight';
+      mark.textContent = match[0];
+      container.appendChild(mark);
+      lastIndex = regex.lastIndex;
+    }
+
+    if (lastIndex < text.length) {
+      container.appendChild(document.createTextNode(text.slice(lastIndex)));
+    }
   }
 
   private formatTime(seconds: number): string {

@@ -31,8 +31,10 @@ export class AudioPlayer {
 
     this.audio.addEventListener('ended', () => {
       this.stopAnimLoop();
-      if (!this.isLooping && this.onEnded) {
-        this.onEnded();
+      this.dispatchCurrentTime();
+      if (!this.isLooping) {
+        if (this.onPlayStateChange) this.onPlayStateChange(false, this.currentTrack);
+        if (this.onEnded) this.onEnded();
       }
     });
 

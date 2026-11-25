@@ -18,7 +18,9 @@
 // shadcn/ui Search Input
 .search-box {
   position: relative;
-  width: 280px;
+  flex: 1 1 220px;
+  min-width: 180px;
+  max-width: 320px;
 
   .search-input {
     width: 100%;
@@ -27,7 +29,7 @@
     border: 1px solid $border-color;
     border-radius: $radius-md;
     color: $foreground;
-    padding: 6px 12px 6px 36px;
+    padding: 6px 32px 6px 36px;
     font-family: $font-sans;
     font-size: 12.5px;
     outline: none;
@@ -43,6 +45,33 @@
       border-color: $primary-hover;
       background: $bg-card-hover;
       box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25), 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+  }
+
+  .btn-clear-search {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    color: $foreground-muted;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.12s;
+
+    &[hidden] {
+      display: none;
+    }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.16);
+      color: #ffffff;
     }
   }
 
@@ -156,7 +185,8 @@
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 14px;
+  flex-wrap: wrap;
 }
 
 // shadcn/ui Switch Primitive
